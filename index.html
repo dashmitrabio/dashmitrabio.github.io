@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Realisasi Mitra Kalimantan 2026</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%230e6b5a'/%3E%3Cpath d='M5 19c0-8 5-13 14-14-1 9-6 14-14 14z' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+html{color-scheme:light}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font-size:14px}
+img{max-width:100%}
+
+/* Layout: sticky header with tabs → summary-before-detail panels; one 1240px column, cards only for things that need separating */
+:root{
+  --bg:#f3f5f2; --surface:#ffffff; --surface-2:#eaefeb; --ink:#14201b; --ink-2:#47554f; --muted:#76837d;
+  --line:#dbe2dc; --axis:#c3cbc5; --accent:#0e6b5a; --accent-ink:#ffffff; --accent-soft:#dcece6;
+  --bar:#1f7a68; --bar-2:#9cc9bc; --ref:#14201b; --proj:#76837d;
+  --good:#0ca30c; --good-ink:#006300; --warn:#fab219; --warn-ink:#8a5a00; --serious:#ec835a; --crit:#d03b3b; --crit-ink:#b22d2d;
+  --good-bg:#e4f4e2; --warn-bg:#fdf1d4; --crit-bg:#fbe4e2; --info-bg:#e5eef8; --info-ink:#245a9c;
+  --sea:#dde8ea; --land:#fbfcf9; --land-2:#cfd8d2; --coast:#9fb2ab; --border:#6d7f78; --sea-ink:#7b959a;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1412; --surface:#151d1a; --surface-2:#1c2723; --ink:#e7eee9; --ink-2:#b2bfb9; --muted:#85938d;
+  --line:#26322d; --axis:#34423c; --accent:#47b49b; --accent-ink:#06120e; --accent-soft:#1b3a32;
+  --bar:#3fae95; --bar-2:#2b5f53; --ref:#e7eee9; --proj:#85938d;
+  --good-ink:#3cc23c; --warn-ink:#fab219; --crit-ink:#f07070;
+  --good-bg:#16301a; --warn-bg:#352a10; --crit-bg:#3a1a1a; --info-bg:#172a40; --info-ink:#8fb8ec;
+  --sea:#0f2024; --land:#1e2a26; --land-2:#18221f; --coast:#3a4c46; --border:#7d8f88; --sea-ink:#557177; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1412; --surface:#151d1a; --surface-2:#1c2723; --ink:#e7eee9; --ink-2:#b2bfb9; --muted:#85938d;
+  --line:#26322d; --axis:#34423c; --accent:#47b49b; --accent-ink:#06120e; --accent-soft:#1b3a32;
+  --bar:#3fae95; --bar-2:#2b5f53; --ref:#e7eee9; --proj:#85938d;
+  --good-ink:#3cc23c; --warn-ink:#fab219; --crit-ink:#f07070;
+  --good-bg:#16301a; --warn-bg:#352a10; --crit-bg:#3a1a1a; --info-bg:#172a40; --info-ink:#8fb8ec;
+  --sea:#0f2024; --land:#1e2a26; --land-2:#18221f; --coast:#3a4c46; --border:#7d8f88; --sea-ink:#557177; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);font-stretch:85%;text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:20px;font-weight:750}
+h2{font-size:18px;font-weight:700}
+h3{font-size:15px;font-weight:700}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--f-mono);font-size:12px}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* header */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-row{display:flex;align-items:center;gap:16px;padding-block:12px;flex-wrap:wrap}
+.brand{display:flex;gap:12px;align-items:center;min-width:0}
+.mark{width:34px;height:34px;border-radius:8px;background:var(--accent);display:grid;place-items:center;flex:none}
+.mark svg{width:20px;height:20px}
+.brand p{margin:0;color:var(--ink-2);font-size:12px}
+.asof{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:12px;color:var(--ink-2);flex-wrap:wrap}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--muted)}
+.dot.on{background:var(--good)} .dot.off{background:var(--crit)} .dot.wait{background:var(--warn)}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav.tabs a{padding:10px 14px;text-decoration:none;color:var(--ink-2);font-weight:600;border-bottom:2px solid transparent;white-space:nowrap}
+nav.tabs a[aria-current="page"]{color:var(--ink);border-color:var(--accent)}
+nav.tabs a:hover{color:var(--ink)}
+nav.tabs .badge{margin-left:6px}
+
+main{padding-block:20px 48px}
+section.view{display:grid;gap:20px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.panel-head p{margin:0;color:var(--muted);font-size:12px}
+.grid-2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px}
+.grid-2e{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media (max-width:900px){.grid-2,.grid-2e{grid-template-columns:minmax(0,1fr)}}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface);padding:14px 16px;display:grid;gap:4px;align-content:start}
+.kpi .v{font-family:var(--f-display);font-stretch:85%;font-size:28px;font-weight:750;line-height:1.1}
+.kpi .v small{font-size:14px;font-weight:600;color:var(--ink-2);margin-left:4px}
+.kpi .s{font-size:12px;color:var(--ink-2)}
+.meter{height:6px;border-radius:3px;background:var(--surface-2);position:relative;overflow:visible;margin-top:6px}
+.meter i{position:absolute;inset:0 auto 0 0;border-radius:3px;background:var(--bar)}
+.meter b{position:absolute;top:-3px;width:2px;height:12px;background:var(--ref)}
+
+/* pills */
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill.aman,.pill.good{background:var(--good-bg);color:var(--good-ink)}
+.pill.waspada,.pill.warning{background:var(--warn-bg);color:var(--warn-ink)}
+.pill.kritis,.pill.critical{background:var(--crit-bg);color:var(--crit-ink)}
+.pill.info,.pill.nonaktif{background:var(--surface-2);color:var(--ink-2)}
+.pill.selesai{background:var(--good-bg);color:var(--good-ink)}
+.pill.proses{background:var(--info-bg);color:var(--info-ink)}
+.pill.open{background:var(--crit-bg);color:var(--crit-ink)}
+.badge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--crit);color:#fff;font-size:11px;font-weight:700}
+.chip{display:inline-block;padding:1px 8px;border-radius:4px;background:var(--surface-2);color:var(--ink-2);font-size:12px;font-weight:600}
+
+/* tables */
+.tbl-wrap{overflow-x:auto;margin:0 -16px;padding:0 16px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.r,th.r{text-align:right}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover{background:var(--surface-2)}
+tbody tr:last-child td{border-bottom:none}
+.prog{display:grid;gap:3px;min-width:120px}
+/* rekap bulan berjalan: satu bar = DO, isi = realisasi */
+.dobar{position:relative;height:22px;border-radius:5px;background:var(--bar-2);overflow:hidden;min-width:180px}
+.dobar .real{position:absolute;inset:0 auto 0 0;background:var(--bar);border-radius:5px 0 0 5px}
+.dobar .over{position:absolute;inset:0 auto 0 auto;background:var(--warn);}
+.dobar .exp{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ref)}
+.dobar .lbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 8px;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;pointer-events:none}
+.dobar .lbl span:first-child{color:#fff;text-shadow:0 0 2px rgba(0,0,0,.35)}
+.dobar .lbl span:last-child{color:var(--ink)}
+.sw.do{background:var(--bar-2)} .sw.ov{background:var(--warn)} .sw.exp{width:2px;height:14px;background:var(--ref)}
+#tbl-month td{white-space:nowrap}
+#tbl-month td.barcell{width:42%;min-width:220px}
+#tbl-month tfoot td{font-weight:700;border-top:2px solid var(--line)}
+.prog .meter{margin-top:0}
+
+/* charts */
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%;overflow:visible}
+.chart text{font-family:var(--f-body);font-size:11px;fill:var(--muted)}
+.chart .lbl{fill:var(--ink-2);font-weight:600}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:10px;border-radius:2px;background:var(--bar);display:inline-block}
+.sw.line{height:2px;background:var(--ref)}
+.sw.dash{height:0;border-top:2px dashed var(--proj);background:none}
+.sw.avg{height:2px;background:var(--crit)}
+#tip{position:fixed;z-index:50;pointer-events:none;background:var(--ink);color:var(--surface);padding:8px 10px;border-radius:6px;font-size:12px;line-height:1.45;max-width:240px;box-shadow:0 4px 16px rgba(0,0,0,.18)}
+#tip b{font-weight:700}
+
+/* plant chips */
+.plant-pick{display:flex;gap:6px;flex-wrap:wrap}
+.plant-pick button{border:1px solid var(--line);background:var(--surface);padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;display:inline-flex;gap:6px;align-items:center}
+.plant-pick button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.plant-pick button .dot{width:7px;height:7px}
+
+/* alerts */
+.alerts{display:grid;gap:10px}
+.alert{border:1px solid var(--line);border-left-width:4px;border-radius:6px;padding:12px 14px;display:grid;gap:6px;background:var(--surface)}
+.alert.critical{border-left-color:var(--crit)}
+.alert.warning{border-left-color:var(--warn)}
+.alert.info{border-left-color:var(--axis)}
+.alert.good{border-left-color:var(--good)}
+.alert-h{display:flex;gap:8px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+.alert-h strong{font-weight:700}
+.alert p{margin:0;color:var(--ink-2);font-size:13px}
+.alert ul{margin:2px 0 0;padding-left:18px;font-size:13px;display:grid;gap:2px}
+.alert .meta{font-size:12px;color:var(--muted)}
+
+/* forms */
+form.entry{display:grid;gap:14px}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:560px){.fields{grid-template-columns:minmax(0,1fr)}}
+.field{display:grid;gap:4px;min-width:0}
+.field.full{grid-column:1/-1}
+label{font-size:12px;font-weight:600;color:var(--ink-2)}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--axis);border-radius:6px;background:var(--surface);min-width:0}
+textarea{resize:vertical;min-height:64px}
+input[readonly]{background:var(--surface-2)}
+.hint{font-size:12px;color:var(--muted)}
+.err{font-size:12px;color:var(--crit-ink);font-weight:600}
+.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);font-weight:700;cursor:pointer}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--accent);}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn.danger{border-color:var(--crit);color:var(--crit-ink);background:transparent}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.notice{padding:10px 12px;border-radius:6px;background:var(--info-bg);color:var(--info-ink);font-size:13px}
+.notice.warn{background:var(--warn-bg);color:var(--warn-ink)}
+.checklist{display:grid;gap:0}
+.checklist div{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.checklist div:last-child{border-bottom:none}
+.checklist .no{color:var(--crit-ink);font-weight:600}
+.checklist .yes{color:var(--good-ink);font-weight:600}
+
+/* issues */
+.filters{display:flex;gap:10px;flex-wrap:wrap}
+.filters select{width:auto;min-width:150px}
+.issues{display:grid;gap:10px}
+.issue{border:1px solid var(--line);border-radius:6px;padding:12px 14px;background:var(--surface);display:grid;gap:8px}
+.issue-h{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.issue-h .when{margin-left:auto;font-size:12px;color:var(--muted)}
+.issue p{margin:0}
+.issue details summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--accent)}
+.issue details ul{margin:6px 0 0;padding-left:18px;font-size:13px}
+.fu{display:grid;grid-template-columns:150px 1fr;gap:8px;margin-top:4px}
+@media (max-width:560px){.fu{grid-template-columns:1fr}}
+.fu-view{font-size:13px;color:var(--ink-2);background:var(--surface-2);padding:8px 10px;border-radius:6px}
+.catbars{display:grid;gap:6px}
+.catbars div{display:grid;grid-template-columns:130px 1fr 34px;gap:8px;align-items:center;font-size:12px}
+.catbars i{display:block;height:8px;border-radius:0 4px 4px 0;background:var(--bar)}
+
+/* map */
+.map{position:relative;border-radius:6px;overflow:hidden;background:var(--sea)}
+.map svg{display:block;width:100%;height:auto}
+.map .prov{font-family:var(--f-display);font-stretch:80%;font-size:15px;font-weight:600;fill:var(--muted);letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+.map .cty{font-family:var(--f-display);font-stretch:80%;font-size:14px;font-weight:600;fill:var(--muted);letter-spacing:.2em;opacity:.6}
+.map .seat{font-family:var(--f-body);font-size:14px;font-style:italic;fill:var(--sea-ink)}
+.map .mk{cursor:pointer}
+.map .mk text{font-family:var(--f-body);font-size:15px;font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--land);stroke-width:5px;stroke-linejoin:round}
+.map .mk text.sub{font-size:13px;font-weight:500;fill:var(--ink-2)}
+.map .mk:hover .ring,.map .mk:focus .ring{stroke:var(--ink);stroke-width:3}
+.map .mk:focus{outline:none}
+.map-legend{display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--ink-2);margin-top:10px}
+.coord-tbl input{width:96px;padding:5px 8px}
+@media (max-width:560px){.map .mk text{font-size:30px;stroke-width:8px}.map .mk text.sub{display:none}.map .prov{font-size:24px}.map .cty,.map .seat{display:none}}
+.ai-out{font-size:13px;line-height:1.6;color:var(--ink)}
+.ai-out h4{font-family:var(--f-display);font-stretch:85%;font-size:14px;margin:12px 0 4px}
+.ai-out ul{margin:0;padding-left:18px}
+.ai-out p{margin:4px 0}
+.empty{color:var(--muted);font-size:13px;padding:16px 0}
+footer{color:var(--muted);font-size:12px;padding-block:0 32px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:6px;font-weight:600;z-index:60}
+@media (prefers-reduced-motion:no-preference){.btn,.plant-pick button{transition:background .15s,color .15s}}
+/* roles */
+.role-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:12px}
+.preview-bar{background:var(--warn-bg);color:var(--warn-ink);font-size:13px;font-weight:600}
+.preview-bar .wrap{display:flex;gap:12px;align-items:center;padding-block:8px;flex-wrap:wrap}
+.hero-m{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:end}
+.hero-m h2{font-size:26px}
+.hero-m p{margin:4px 0 0;color:var(--ink-2)}
+.days{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:4px;margin-top:6px}
+.days span{height:28px;border-radius:4px;background:var(--crit-bg);display:grid;place-items:center;font-size:10px;color:var(--crit-ink);font-weight:600}
+.days span.ok{background:var(--good-bg);color:var(--good-ink)}
+.days span.kd{background:var(--warn-bg);color:var(--warn-ink)}
+.center-card{max-width:620px;margin:24px auto;display:grid;gap:16px}
+.ann{border-left:3px solid var(--accent);padding:4px 0 4px 12px;display:grid;gap:2px}
+.ann p{margin:0;font-size:13px;color:var(--ink-2);white-space:pre-wrap}
+.ann .meta{font-size:12px;color:var(--muted)}
+.acc-row td{vertical-align:top}
+.acc-row select,.acc-row input{min-width:150px}
+.steps{margin:0;padding-left:20px;display:grid;gap:6px;font-size:13px;color:var(--ink-2)}
+.mng{display:grid;gap:12px;padding:6px 0}
+.appr{display:grid;gap:6px;min-width:260px}
+.appr-row{display:flex;gap:8px;align-items:center}
+.appr-row label{flex:0 0 140px;display:flex;gap:6px;align-items:center;font-size:13px;color:var(--ink);white-space:nowrap}
+.appr-row label input{flex:none;width:auto;min-width:0}
+.appr-row select{flex:1;width:auto;font-size:13px;padding:4px 6px}
+.pic-list{display:grid;gap:8px;margin-bottom:16px}
+.pic{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.pic .who{min-width:0}
+.pic .who strong{display:block}
+.pic .act{display:flex;gap:6px;flex-wrap:wrap}
+.pic form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;width:100%;align-items:end}
+.seg{display:inline-flex;gap:2px;padding:3px;border-radius:8px;background:var(--surface-2);margin-bottom:14px}
+.seg button{border:0;background:transparent;color:var(--ink-2);font:inherit;font-weight:600;font-size:13px;padding:7px 14px;border-radius:6px;cursor:pointer}
+.seg button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.bulk-tools{display:grid;grid-template-columns:160px 200px 1fr;gap:12px;align-items:end;margin-bottom:12px}
+.bulk-tools .hint{margin:0}
+@media (max-width:700px){.bulk-tools{grid-template-columns:1fr 1fr}.bulk-tools .hint{grid-column:1/-1}}
+kbd{font:inherit;font-size:11px;padding:0 4px;border:1px solid var(--line);border-radius:3px}
+#tbl-bulk{min-width:640px}
+#tbl-bulk td{padding:3px 6px;vertical-align:middle}
+#tbl-bulk th{position:sticky;top:0;background:var(--surface);z-index:1}
+#tbl-bulk input,#tbl-bulk select{padding:5px 7px;font-size:13px;min-width:0}
+#tbl-bulk td.c-vol,#tbl-bulk td.c-rit{text-align:right;width:1%}
+#tbl-bulk td.c-day,#tbl-bulk td.c-kend{width:1%}
+#tbl-bulk .c-vol input{width:92px;text-align:right;font-variant-numeric:tabular-nums}
+#tbl-bulk .c-rit input{width:64px;text-align:right}
+#tbl-bulk .c-kend select{width:150px}
+#tbl-bulk .c-ket input{width:100%;min-width:170px}
+#tbl-bulk .c-day{white-space:nowrap;font-variant-numeric:tabular-nums}
+#tbl-bulk .c-day small{color:var(--muted);margin-left:4px}
+#tbl-bulk tr.wk .c-day{color:var(--muted)}
+#tbl-bulk tr.dirty td{background:var(--accent-soft)}
+#tbl-bulk tr.bad td{background:var(--crit-bg)}
+#tbl-bulk tr.fut{opacity:.45}
+#tbl-bulk tfoot td{font-weight:700;padding:8px 6px;border-top:2px solid var(--line)}
+.src{font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px;white-space:nowrap}
+.src.excel{background:var(--info-bg);color:var(--info-ink)} .src.online{background:var(--good-bg);color:var(--good-ink)}
+.bulk-bar{position:sticky;bottom:0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 0 2px;margin-top:8px;background:var(--surface);border-top:1px solid var(--line);z-index:2}
+.bulk-bar.has #b-status{color:var(--ink);font-weight:600}
+.grid-2.solo{grid-template-columns:minmax(0,1fr)}
+.pw{position:relative}
+.pw input{padding-right:64px}
+.pw-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:var(--accent);font:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:4px 6px}
+#v-login .seg{display:flex}
+#v-login .seg button{flex:1}
+.ym-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.ym-head select{width:auto;min-width:200px}
+#tbl-ym td,#tbl-ym th{white-space:nowrap}
+#tbl-ym tr.cur td{background:var(--accent-soft)}
+#tbl-ym tr.fut td{color:var(--muted)}
+#tbl-ym tfoot td{font-weight:700;border-top:2px solid var(--line)}
+.mbar{display:inline-block;vertical-align:middle;width:90px;height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-left:8px}
+.mbar i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.mbar.run i{background:var(--warn)}
+.mbar.ok i{background:var(--good)}
+.mbar.bad i{background:var(--crit)}
+.via{font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px;white-space:nowrap;margin-left:6px}
+.via.kontrak{background:var(--good-bg);color:var(--good-ink)} .via.nama,.via.singkatan{background:var(--info-bg);color:var(--info-ink)}
+.via.mirip{background:var(--warn-bg);color:var(--warn-ink)} .via.none{background:var(--surface-2);color:var(--muted)}
+.appr-row{flex-wrap:wrap}
+#tbl-induk td{vertical-align:top}
+#tbl-induk input{font-size:13px;padding:5px 7px;min-width:180px}
+#tbl-induk tr.dirty td{background:var(--accent-soft)}
+.gb{display:grid;gap:6px;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);white-space:normal;max-width:340px}
+.gb input{min-width:0}
+.dm-wrap{max-height:640px;overflow:auto}
+#tbl-dm{font-size:13px}
+#tbl-dm th,#tbl-dm td{white-space:nowrap;padding:5px 8px}
+#tbl-dm thead th{position:sticky;top:0;background:var(--surface);z-index:2}
+#tbl-dm td:first-child,#tbl-dm th:first-child{position:sticky;left:0;background:var(--surface);z-index:1}
+#tbl-dm thead th:first-child{z-index:3}
+#tbl-dm tr.wk td:first-child{color:var(--muted)}
+#tbl-dm tr.fut td{color:var(--muted)}
+#tbl-dm tr.today td{background:var(--accent-soft)}
+#tbl-dm td.tot,#tbl-dm th.tot{font-weight:700;border-left:2px solid var(--line)}
+#tbl-dm tfoot{position:sticky;bottom:0;z-index:2}
+#tbl-dm tfoot td{font-weight:700;background:var(--surface)}
+#tbl-dm tfoot tr:first-child td{border-top:2px solid var(--line)}
+#tbl-dm .on,.dm-on{color:var(--good-ink);font-weight:600}
+#tbl-dm th.mt{max-width:110px;overflow:hidden;text-overflow:ellipsis}
+.read{display:block;margin-top:4px}
+.read.bad{color:var(--crit-ink)}
+.kp-list{display:grid;gap:8px}
+.kp-row{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:start;padding:8px 0;border-top:1px solid var(--line)}
+.kp-row:first-child{border-top:0;padding-top:0}
+.kp-l{font-size:13px;font-weight:600;padding-top:9px}
+.kp-ins{display:grid;gap:6px}
+.kp-in{display:flex;gap:6px;align-items:center}
+.kp-in input{flex:1;min-width:0}
+.kp-x{flex:none;width:34px;height:34px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--crit-ink);font-size:18px;line-height:1;cursor:pointer}
+.kp-add{justify-self:start;border:1px dashed var(--line);background:transparent;color:var(--accent);font:inherit;font-size:12px;font-weight:600;padding:5px 10px;border-radius:6px;cursor:pointer}
+@media (max-width:560px){.kp-row{grid-template-columns:1fr}.kp-l{padding-top:0}}
+.appr-k{flex-basis:100%;font-size:11px;color:var(--muted);padding-left:24px}
+.flabel{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.pick-list{display:flex;flex-wrap:wrap;gap:8px}
+.pick{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:13px;cursor:pointer;background:var(--surface)}
+.pick input{width:auto;margin:0}
+.pick:has(input:checked){border-color:var(--accent);background:var(--surface-2)}
+.pick small{color:var(--muted);font-size:11px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip.lg{font-size:13px;padding:4px 6px 4px 10px;display:inline-flex;align-items:center;gap:6px}
+.chip .x{border:0;background:transparent;color:var(--ink-2);cursor:pointer;font:inherit;padding:0 4px;border-radius:4px}
+.chip .x:hover{color:var(--crit);background:var(--surface-2,rgba(0,0,0,.05))}
+.mng-add{flex-wrap:wrap;gap:8px}.mng-add select,.mng-add input{width:auto;min-width:160px}
+tr.mng-row>td{background:var(--surface-2,transparent)}
+</style>
+</head>
+<body>
+
+
+<header class="top">
+  <div class="wrap">
+    <div class="top-row">
+      <div class="brand">
+        <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" stroke-width="2" stroke-linecap="round"><path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14z"/><path d="M5 19l7-7"/></svg></div>
+        <div><h1>Realisasi Mitra Kalimantan 2026</h1><p id="brand-sub">Pasokan biomassa PLTU · PLN EPI</p></div>
+      </div>
+      <div class="asof"><span class="role-chip" id="role-chip" hidden></span><span id="asof-text"></span><span id="user-box" class="row" style="gap:8px" hidden><span id="user-email"></span><button class="btn ghost sm" id="logout" type="button">Keluar</button></span></div>
+    </div>
+    <nav class="tabs" id="tabs" aria-label="Bagian dashboard"></nav>
+  </div>
+</header>
+<div class="preview-bar" id="preview-bar" hidden><div class="wrap"><span id="preview-text"></span><button class="btn sm" type="button" id="preview-exit">Kembali ke tampilan manager</button></div></div>
+
+<main class="wrap">
+  <section class="view" id="v-loading"><div class="center-card panel"><h2>Memeriksa akses Anda…</h2><p class="hint" style="margin:0">Halaman menyesuaikan isi dengan peran akun Anda.</p></div></section>
+
+  <section class="view" id="v-login" hidden>
+    <div class="center-card">
+      <div class="panel">
+        <div class="panel-head"><h2 id="login-title">Realisasi Mitra Kalimantan</h2><p>PLN EPI Wilayah Kalimantan</p></div>
+        <div class="seg" role="tablist" aria-label="Masuk atau daftar">
+          <button type="button" role="tab" id="auth-in" aria-controls="login-form" aria-selected="true">Masuk</button>
+          <button type="button" role="tab" id="auth-up" aria-controls="signup-form" aria-selected="false">Daftar akun baru</button>
+        </div>
+        <form id="login-form" class="entry" role="tabpanel" aria-labelledby="auth-in" novalidate>
+          <div class="field" id="l-email-wrap"><label for="l-email">Nama pengguna</label><input id="l-email" type="text" autocomplete="username" placeholder="contoh: PT MJC" maxlength="40"></div>
+          <div class="field"><label for="l-pass">Password</label><div class="pw"><input id="l-pass" type="password" autocomplete="current-password"><button type="button" class="pw-eye" data-eye="l-pass" aria-label="Tampilkan password">Lihat</button></div></div>
+          <div class="err" id="login-err" hidden></div>
+          <div class="notice" id="login-msg" hidden></div>
+          <div class="row"><button class="btn" type="submit" id="l-go">Masuk</button></div>
+          <p class="hint" style="margin:0">Belum punya akun? <a href="#" id="go-signup">Daftar akun baru</a>. Lupa password? Hubungi manager PLN EPI Kalimantan untuk direset.</p>
+        </form>
+        <form id="signup-form" class="entry" role="tabpanel" aria-labelledby="auth-up" novalidate hidden>
+          <p class="hint" style="margin:0">Cukup isi sekali. Tidak perlu email. Setelah dikirim, manager PLN EPI memverifikasi lalu Anda bisa langsung mengisi laporan.</p>
+          <label class="hint" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="s-staf" style="width:auto"> Saya staf PLN EPI (bukan mitra)</label>
+          <div class="fields">
+            <div class="field full" data-mitra><label for="s-co">Nama perusahaan</label><input id="s-co" maxlength="120" autocomplete="organization" placeholder="nama lengkap atau singkatan, contoh: PT Mitra Jaya Cemerlang"></div>
+            <div class="field full" data-mitra><span class="flabel">PLTU yang Anda pasok <span class="hint">(boleh lebih dari satu)</span></span><div class="pick-list" id="s-plants" role="group" aria-label="PLTU yang Anda pasok"><span class="hint">Memuat daftar PLTU…</span></div></div>
+            <div class="field full" data-mitra><span class="flabel">Nomor kontrak per PLTU</span><div class="kp-list" id="s-kp"></div><span class="hint">Isi seperti tertulis di kontrak, misalnya <span class="mono">0680.PJ</span>. Punya lebih dari satu kontrak di PLTU yang sama? Klik <strong>+ Tambah kontrak</strong>.</span></div>
+            <div class="field"><label for="s-pic">Nama PIC</label><input id="s-pic" maxlength="60" autocomplete="name"></div>
+            <div class="field"><label for="s-hp">No. HP / WhatsApp</label><input id="s-hp" maxlength="20" inputmode="tel" autocomplete="tel"></div>
+            <div class="field full"><label for="s-user">Nama pengguna untuk masuk</label><input id="s-user" maxlength="40" autocomplete="username"><span class="hint" id="s-user-hint">Otomatis dari nama perusahaan. Boleh diubah.</span></div>
+            <div class="field"><label for="s-pass">Password <span class="hint">(min. 8 karakter)</span></label><div class="pw"><input id="s-pass" type="password" autocomplete="new-password"><button type="button" class="pw-eye" data-eye="s-pass" aria-label="Tampilkan password">Lihat</button></div></div>
+            <div class="field"><label for="s-pass2">Ulangi password</label><input id="s-pass2" type="password" autocomplete="new-password"></div>
+          </div>
+          <div class="err" id="signup-err" hidden></div>
+          <div class="row"><button class="btn" type="submit" id="s-go">Daftar &amp; kirim permintaan akses</button></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="v-guest" hidden><div class="center-card panel"><h2>Situs belum terhubung</h2><p style="margin:0;color:var(--ink-2)" id="guest-text">Situs belum siap digunakan.</p></div></section>
+
+  <!-- ===== MITRA: registration ===== -->
+  <section class="view" id="v-daftar" hidden>
+    <div class="center-card">
+      <div class="panel">
+        <div class="panel-head"><h2 id="daftar-title">Daftarkan akun mitra</h2></div>
+        <div id="daftar-status"></div>
+        <form id="reg-form" class="entry" novalidate>
+          <p class="hint" style="margin:0">Pilih nama perusahaan Anda lalu centang <strong>semua PLTU</strong> yang Anda pasok. Satu akun bisa melapor ke beberapa PLTU. Manager PLN EPI Kalimantan akan memverifikasi sebelum Anda bisa mengisi laporan harian.</p>
+          <div class="fields">
+            <div class="field full"><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" id="r-staf" style="width:auto"> Saya staf PLN EPI (minta akses manager)</label></div>
+            <div class="field full" id="r-partner-wrap"><label for="r-partner">Perusahaan mitra</label><select id="r-partner"></select></div>
+            <div class="field full" id="r-new-wrap" hidden><label for="r-new">Nama perusahaan</label><input id="r-new" maxlength="60" placeholder="contoh: PT ABC"></div>
+            <div class="field full" id="r-plants-wrap"><span class="flabel">PLTU yang Anda pasok</span><div class="pick-list" id="r-plants" role="group" aria-label="PLTU yang Anda pasok"></div><span class="hint">Yang sudah tercentang adalah PLTU tempat perusahaan Anda tercatat. Centang PLTU lain bila Anda juga memasok ke sana.</span></div>
+            <div class="field full" id="r-kontrak-wrap"><span class="flabel">Nomor kontrak per PLTU</span><div class="kp-list" id="r-kp"></div><span class="hint">Isi seperti tertulis di kontrak, misalnya <span class="mono">0680.PJ</span>. Punya lebih dari satu kontrak di PLTU yang sama? Klik <strong>+ Tambah kontrak</strong>.</span></div>
+            <div class="field"><label for="r-pic">Nama PIC pelapor</label><input id="r-pic" maxlength="60" autocomplete="name"></div>
+            <div class="field"><label for="r-hp">No. HP / WhatsApp</label><input id="r-hp" maxlength="20" inputmode="tel" autocomplete="tel"></div>
+          </div>
+          <div class="err" id="r-err" hidden></div>
+          <div class="row"><button class="btn" type="submit" id="r-submit">Kirim permintaan akses</button></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MITRA: beranda ===== -->
+  <section class="view" id="v-beranda" hidden>
+    <div class="hero-m"><div><span class="eyebrow" id="m-eyebrow"></span><h2 id="m-title"></h2><p id="m-sub"></p></div><div class="row"><div class="plant-pick" id="m-partner-pick"></div><a class="btn" href="#lapor" id="m-cta">Isi laporan hari ini</a></div></div>
+    <div class="kpis" id="m-kpis"></div>
+    <div class="panel" id="m-multi" hidden>
+      <div class="panel-head"><h2>Semua PLTU yang Anda pasok</h2><p id="m-multi-sub"></p></div>
+      <div class="tbl-wrap"><table id="tbl-multi"></table></div>
+      <p class="hint" style="margin:8px 0 0">Klik baris untuk melihat detail PLTU tersebut di atas.</p>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><h2>Pengiriman harian Anda</h2><p>60 hari terakhir · MT</p></div>
+        <div class="chart" id="m-daily"></div>
+        <div class="legend"><span><i class="sw"></i>Diterima PLTU</span><span><i class="sw avg"></i>Rata-rata 7 hari</span></div>
+      </div>
+      <div style="display:grid;gap:20px;align-content:start;min-width:0">
+        <div class="panel"><div class="panel-head"><h3>Kepatuhan lapor 14 hari</h3><p id="m-comp-sub"></p></div><div class="days" id="m-days"></div><p class="hint" style="margin:8px 0 0">Hijau = ada laporan/pasokan · kuning = lapor kendala · merah = kosong</p></div>
+        <div class="panel"><div class="panel-head"><h3>Pengumuman PLN EPI</h3></div><div style="display:grid;gap:12px" id="m-ann"></div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Realisasi bulanan Anda</h2><p>MT</p></div>
+      <div class="chart" id="m-month"></div>
+    </div>
+    <div class="panel" id="m-pic" hidden>
+      <div class="panel-head"><h2>PIC pelapor</h2><p>Kontak yang dihubungi PLN EPI untuk akun ini</p></div>
+      <div class="pic-list" id="m-pic-list"></div>
+      <form id="m-pic-add" class="entry" novalidate>
+        <span class="flabel">Tambah PIC</span>
+        <div class="fields">
+          <div class="field"><label for="pa-nama">Nama</label><input id="pa-nama" maxlength="60" autocomplete="off"></div>
+          <div class="field"><label for="pa-hp">No. HP / WhatsApp</label><input id="pa-hp" maxlength="20" inputmode="tel" autocomplete="off"></div>
+          <div class="field full"><label for="pa-jab">Jabatan / tugas <span class="hint">(opsional)</span></label><input id="pa-jab" maxlength="40" placeholder="contoh: Admin lapangan PLTU Sintang"></div>
+        </div>
+        <div class="err" id="pa-err" hidden></div>
+        <div class="row"><button class="btn ghost" type="submit">Tambah PIC</button></div>
+      </form>
+    </div>
+    <div class="panel" id="m-add" hidden>
+      <div class="panel-head"><h2>Memasok PLTU lain?</h2><p>Ajukan agar akun ini juga bisa melapor ke PLTU tersebut</p></div>
+      <div id="m-add-status"></div>
+      <form id="m-add-form" class="entry" novalidate>
+        <div class="fields">
+          <div class="field full"><span class="flabel">Centang PLTU yang juga Anda pasok</span><div class="pick-list" id="m-add-plants" role="group" aria-label="PLTU tambahan"></div></div>
+          <div class="field full"><span class="flabel">Nomor kontrak per PLTU</span><div class="kp-list" id="m-kp"></div><span class="hint">Isi seperti tertulis di kontrak, misalnya <span class="mono">0680.PJ</span>. Punya lebih dari satu kontrak di PLTU yang sama? Klik <strong>+ Tambah kontrak</strong>.</span></div>
+        </div>
+        <div class="err" id="m-add-err" hidden></div>
+        <div class="row"><button class="btn ghost" type="submit">Ajukan PLTU tambahan</button></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ===== MITRA: kendala & info ===== -->
+  <section class="view" id="v-isu" hidden>
+    <div class="grid-2">
+      <div class="panel"><div class="panel-head"><h2>Kendala &amp; tanggapan PLN</h2><p id="m-isu-count"></p></div><div class="issues" id="m-isu"></div></div>
+      <div class="panel"><div class="panel-head"><h3>Panduan mitigasi</h3><p>Langkah yang bisa langsung dilakukan mitra</p></div><div class="alerts" id="m-guide"></div></div>
+    </div>
+  </section>
+
+  <!-- ===== MANAGER: ringkasan ===== -->
+  <section class="view" id="v-ringkasan" hidden>
+    <div class="kpis" id="kpis"></div>
+    <div class="panel">
+      <div class="panel-head"><h2 id="month-title">Rekap bulan berjalan</h2><p id="month-sub"></p></div>
+      <div class="tbl-wrap"><table id="tbl-month"></table></div>
+      <div class="legend"><span><i class="sw"></i>Realisasi</span><span><i class="sw do"></i>Sisa DO</span><span><i class="sw ov"></i>Melebihi DO</span><span><i class="sw exp"></i>Target prorata s/d hari ini</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head ym-head"><div><h2 id="ym-title">Rekap bulanan &amp; akumulasi</h2><p id="ym-sub"></p></div><select id="ym-plant" aria-label="Pilih PLTU untuk rekap bulanan"></select></div>
+      <div class="tbl-wrap"><table id="tbl-ym"></table></div>
+      <p class="hint" style="margin:10px 0 0">Januari–Maret dari sheet Rekap Excel; April dan seterusnya dari data harian (Excel + laporan online mitra). % akumulasi dihitung terhadap Target Waiver tahunan. *DO bulan berjalan pada baris total dihitung prorata sampai hari ini. Warna bilah % DO: <span style="color:var(--good-ink);font-weight:600">hijau</span> = mencapai/di atas DO, <span style="color:var(--crit-ink);font-weight:600">merah</span> = di bawah DO, <span style="color:var(--warn-ink);font-weight:600">kuning</span> = bulan berjalan.</p>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><h2>Peta PLTU Kalimantan</h2><p>Klik titik untuk detail PLTU</p></div>
+        <div class="map" id="map"><p class="empty" style="padding:24px">Memuat peta…</p></div>
+        <div class="map-legend"><span class="pill aman">Aman / Waiver tercapai</span><span class="pill waspada">Waspada</span><span class="pill kritis">Kritis</span><span>Ukuran lingkaran = akumulasi 2026 · angka = % target Waiver</span></div>
+        <p class="hint" style="margin:8px 0 0">Titik di peta adalah perkiraan lokasi PLTU. <button type="button" class="btn ghost sm" id="coord-edit">Koreksi koordinat</button></p>
+        <div id="coord-form" hidden style="margin-top:10px"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Perlu perhatian</h2><p id="alert-count"></p></div>
+        <div class="alerts" id="top-alerts"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Status per PLTU</h2><div class="row"><p>Klik baris untuk detail · proyeksi pakai laju 30 hari terakhir</p><button class="btn ghost sm" id="tgt-edit" type="button">Ubah target Waiver</button><button class="btn ghost sm" id="btn-csv" hidden>Unduh CSV</button></div></div>
+      <div id="tgt-form" hidden style="margin-bottom:14px"></div>
+      <div class="tbl-wrap"><table id="tbl-plants"></table></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Realisasi bulanan vs DO</h2><p>Semua PLTU · MT</p></div>
+      <div class="chart" id="ch-month-all"></div>
+      <div class="legend"><span><i class="sw"></i>Realisasi</span><span><i class="sw line"></i>Target DO bulan itu</span></div>
+    </div>
+  </section>
+
+  <!-- ===== MANAGER: per PLTU ===== -->
+  <section class="view" id="v-pltu" hidden>
+    <div class="plant-pick" id="plant-pick" role="group" aria-label="Pilih PLTU"></div>
+    <div class="kpis" id="pkpis"></div>
+    <div class="grid-2e">
+      <div class="panel">
+        <div class="panel-head"><h2>Akumulasi menuju target</h2><p>MT kumulatif 2026</p></div>
+        <div class="chart" id="ch-cum"></div>
+        <div class="legend"><span><i class="sw line" style="background:var(--bar)"></i>Realisasi kumulatif</span><span><i class="sw dash"></i>Proyeksi s/d 31 Des</span><span><i class="sw line"></i>Target Waiver</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Pasokan harian</h2><p>60 hari terakhir · MT</p></div>
+        <div class="chart" id="ch-daily"></div>
+        <div class="legend"><span><i class="sw"></i>Total harian</span><span><i class="sw avg"></i>Rata-rata 7 hari</span><span><i class="sw line"></i>Kebutuhan harian ke target Waiver</span></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><h2>Kinerja mitra</h2><p>30 hari terakhir</p></div>
+        <div class="tbl-wrap"><table id="tbl-partners"></table></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Realisasi bulanan vs DO</h2><p>MT</p></div>
+        <div class="chart" id="ch-month-plant"></div>
+        <div class="legend"><span><i class="sw"></i>Realisasi</span><span><i class="sw line"></i>DO</span></div>
+      </div>
+    </div>
+    <div class="panel" id="dm-panel">
+      <div class="panel-head ym-head"><div><h2 id="dm-title">Realisasi harian per mitra</h2><p id="dm-sub"></p></div>
+        <div class="row"><select id="dm-month" aria-label="Pilih bulan"></select><button class="btn ghost sm" type="button" id="dm-csv">Unduh CSV</button></div></div>
+      <div class="tbl-wrap dm-wrap"><table id="tbl-dm"></table></div>
+      <p class="hint" style="margin:10px 0 0">MT per hari. <span class="dm-on">Angka hijau</span> = laporan online mitra, angka biasa = dari Excel, kosong = tidak ada pengiriman. Kolom terakhir: total harian dan akumulasi bulan dibanding DO bulan ini.</p>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="panel-head"><h2>Peringatan &amp; mitigasi otomatis</h2><p>Dihitung dari data terbaru</p></div>
+        <div class="alerts" id="plant-alerts"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== INPUT (both roles) ===== -->
+  <section class="view" id="v-input" hidden>
+    <div class="grid-2" id="input-grid">
+      <div class="panel">
+        <div class="panel-head"><h2 id="in-title">Laporan harian pasokan</h2><p>Isi banyak hari sekaligus di tabel bulanan, atau satu hari lewat formulir</p></div>
+        <div class="notice warn" id="input-gate" hidden style="margin-bottom:12px"></div>
+        <div class="fields entry" style="margin-bottom:14px">
+          <div class="field"><label for="f-plant">PLTU tujuan</label><select id="f-plant" required></select></div>
+          <div class="field"><label for="f-partner">Nama mitra</label><select id="f-partner" required></select></div>
+          <div class="field full" id="wrap-new" hidden><label for="f-partner-new">Nama mitra baru</label><input id="f-partner-new" maxlength="60" placeholder="contoh: PT ABC"></div>
+        </div>
+        <div class="seg" role="tablist" aria-label="Cara input">
+          <button type="button" role="tab" id="mode-bulk" aria-controls="bulk" aria-selected="true">Tabel bulanan</button>
+          <button type="button" role="tab" id="mode-day" aria-controls="entry-form" aria-selected="false">Satu hari</button>
+        </div>
+        <div id="bulk" role="tabpanel" aria-labelledby="mode-bulk">
+          <div class="bulk-tools">
+            <div class="field"><label for="b-month">Bulan</label><select id="b-month"></select></div>
+            <div class="field"><label for="b-jenis">Jenis biomassa</label><select id="b-jenis"><option value="CS">Cangkang sawit (CS)</option><option value="WC">Wood chip (WC)</option><option value="SD">Serbuk kayu (SD)</option><option value="PTK">PTK</option><option value="Lain">Lainnya</option></select></div>
+            <p class="hint">Ketik langsung di tabel, tekan <kbd>Enter</kbd> untuk turun ke hari berikutnya. Desimal boleh pakai koma atau titik (45,5 = 45.5). Bisa juga salin satu kolom angka dari Excel lalu tempel di kolom MT. Kosongkan MT untuk menghapus laporan online.</p>
+          </div>
+          <div class="tbl-wrap"><table id="tbl-bulk"></table></div>
+          <div class="err" id="b-err" hidden></div>
+          <div class="bulk-bar" id="b-bar"><span id="b-status" class="hint">Belum ada perubahan</span><span class="row"><button class="btn ghost sm" type="button" id="b-cancel" disabled>Batalkan</button><button class="btn" type="button" id="b-save" disabled>Simpan perubahan</button></span></div>
+        </div>
+        <form class="entry" id="entry-form" role="tabpanel" aria-labelledby="mode-day" novalidate hidden>
+          <div class="fields">
+            <div class="field"><label for="f-date">Tanggal pengiriman</label><input type="date" id="f-date" required min="2026-01-01" max="2026-12-31"></div>
+            <div class="field"><label for="f-jenis">Jenis biomassa</label><select id="f-jenis"><option value="CS">Cangkang sawit (CS)</option><option value="WC">Wood chip (WC)</option><option value="SD">Serbuk kayu (SD)</option><option value="PTK">PTK</option><option value="Lain">Lainnya</option></select></div>
+            <div class="field"><label for="f-vol">Realisasi diterima PLTU (MT)</label><input type="text" id="f-vol" inputmode="decimal" autocomplete="off" required placeholder="contoh: 45,5 atau 45.5"></div>
+            <div class="field"><label for="f-rit">Jumlah ritase / truk</label><input type="text" id="f-rit" inputmode="numeric" autocomplete="off" placeholder="opsional"></div>
+            <div class="field"><label for="f-kendala">Kendala hari ini</label><select id="f-kendala"></select></div>
+            <div class="field"><label for="f-rencana">Rencana kirim besok (MT)</label><input type="text" id="f-rencana" inputmode="decimal" autocomplete="off" placeholder="opsional"></div>
+            <div class="field full"><label for="f-ket">Keterangan / detail kendala</label><textarea id="f-ket" maxlength="500" placeholder="contoh: 2 DT perbaikan, jalan km 12 longsor, antrian bongkar 5 jam"></textarea></div>
+          </div>
+          <div class="err" id="f-err" hidden></div>
+          <div class="row"><button class="btn" type="submit" id="f-submit">Simpan laporan</button><span class="hint" id="f-exist"></span></div>
+        </form>
+      </div>
+      <div style="display:grid;gap:20px;align-content:start;min-width:0">
+        <div class="panel" id="chk-panel">
+          <div class="panel-head"><h3 id="chk-title">Status laporan</h3><p id="chk-sub"></p></div>
+          <div class="checklist" id="checklist"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Riwayat input online</h3><p id="hist-sub">Mitra terpilih</p></div>
+          <div class="tbl-wrap"><table id="tbl-history"></table></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MANAGER: kendala ===== -->
+  <section class="view" id="v-kendala" hidden>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><h2>Daftar kendala &amp; tindak lanjut</h2><p id="issue-count"></p></div>
+        <div class="filters" style="margin-bottom:14px">
+          <select id="flt-plant" aria-label="Filter PLTU"></select>
+          <select id="flt-status" aria-label="Filter status"><option value="">Semua status</option><option value="open">Belum ditangani</option><option value="proses">Dalam penanganan</option><option value="selesai">Selesai</option></select>
+          <select id="flt-cat" aria-label="Filter kategori"></select>
+        </div>
+        <div class="issues" id="issue-list"></div>
+      </div>
+      <div style="display:grid;gap:20px;align-content:start;min-width:0">
+        <div class="panel"><div class="panel-head"><h3>Kendala per kategori</h3><p>Semua sumber</p></div><div class="catbars" id="catbars"></div></div>
+        <div class="panel"><div class="panel-head"><h3>Cara kerja</h3></div>
+          <div class="hint" style="display:grid;gap:8px;color:var(--ink-2)">
+            <p style="margin:0">Kendala masuk dari laporan harian mitra, catatan di file Excel, dan peringatan sistem.</p>
+            <p style="margin:0">Status, PIC, dan tindak lanjut hanya terlihat oleh tim PLN EPI. Isi <strong>Pesan untuk mitra</strong> bila ingin tanggapan tampil di halaman mitra terkait.</p>
+          </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MANAGER: akses ===== -->
+  <section class="view" id="v-akses" hidden>
+    <div class="panel" id="sync-panel">
+      <div class="panel-head"><h2>Sinkron otomatis dari Excel Online</h2><p id="sync-sub"></p></div>
+      <div class="notice warn" id="sync-setup" hidden>Fitur sinkron belum aktif di database. Jalankan file <strong>SINKRON_EXCEL.sql</strong> dan pasang fungsi <strong>sinkron-excel</strong> (lihat PANDUAN).</div>
+      <form id="sync-form" class="entry" novalidate>
+        <div class="field"><label for="s-url">Link berbagi file Excel (OneDrive / SharePoint)</label><input id="s-url" type="url" inputmode="url" placeholder="https://pln365.sharepoint.com/:x:/... atau https://1drv.ms/x/..."></div>
+        <p class="hint" style="margin:0">Bagikan file dengan pilihan <strong>“Siapa saja yang memiliki tautan dapat melihat”</strong>. Data diperbarui otomatis setiap 15 menit tanpa login Microsoft. Laporan online mitra tidak ditimpa, dan target Waiver yang sudah Anda ubah tetap dipertahankan.</p>
+        <div class="row"><button class="btn" type="submit">Simpan link</button><button class="btn ghost" type="button" id="s-run">Sinkron sekarang</button><span class="err" id="s-err" hidden></span></div>
+      </form>
+      <div class="tbl-wrap" style="margin-top:12px"><table id="tbl-sync"></table></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Permintaan akses</h2><p id="req-count"></p></div>
+      <div class="tbl-wrap"><table id="tbl-req"></table></div>
+      <div id="orphan-wrap" hidden style="margin-top:16px"><h3 style="margin:0 0 4px;font-size:15px">Akun belum melengkapi pendaftaran</h3><p class="hint" style="margin:0 0 8px">Sudah membuat akun tetapi belum mengirim nama perusahaan &amp; PLTU. Minta mitra masuk lagi untuk melengkapi, atau hapus akunnya agar nama pengguna bisa dipakai ulang.</p><div class="tbl-wrap"><table id="tbl-orphan"></table></div></div>
+    </div>
+    <div class="panel" id="induk-panel">
+      <div class="panel-head ym-head"><div><h2>Data induk mitra</h2><p>Singkatan EPI tetap menjadi kunci (sesuai kolom Excel). Lengkapi nama lengkap &amp; nama lain agar pendaftaran mitra tercocokkan otomatis.</p></div><input id="induk-q" type="search" placeholder="Cari mitra…" aria-label="Cari mitra" style="width:auto;min-width:200px"></div>
+      <div class="tbl-wrap"><table id="tbl-induk"></table></div>
+      <p class="hint" style="margin:10px 0 0">Nomor kontrak dibaca otomatis dari baris kedua header tiap sheet Excel; kontrak yang dipakai mitra saat mendaftar ditambahkan otomatis setelah Anda setujui. Nama lain dipisah dengan koma. Dua nama yang sebenarnya satu perusahaan (misalnya nama lengkap di satu sheet dan singkatan di sheet lain): klik <strong>Ubah / gabung singkatan</strong> pada nama yang ingin dipensiunkan, lalu pilih singkatan tujuannya.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Mitra terdaftar</h2><p>Kepatuhan lapor 14 hari terakhir</p></div>
+      <div class="tbl-wrap"><table id="tbl-reg"></table></div>
+      <p class="hint" style="margin:8px 0 0"><strong>Cabut akses</strong> menonaktifkan sementara (bisa diaktifkan lagi). <strong>Hapus akun</strong> menghapus login secara permanen; laporan yang sudah diinput tetap tersimpan dengan nama pelapornya, dan nama pengguna bisa dipakai mendaftar ulang.</p>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><h2>Pengumuman untuk mitra</h2></div>
+        <form id="ann-form" class="entry" novalidate>
+          <div class="fields">
+            <div class="field"><label for="a-judul">Judul</label><input id="a-judul" maxlength="80" placeholder="contoh: Jadwal bongkar selama Natal"></div>
+            <div class="field"><label for="a-plant">Ditujukan ke</label><select id="a-plant"></select></div>
+            <div class="field full"><label for="a-isi">Isi pengumuman</label><textarea id="a-isi" maxlength="800"></textarea></div>
+          </div>
+          <div class="row"><button class="btn" type="submit">Terbitkan</button><span class="err" id="a-err" hidden></span></div>
+        </form>
+        <div style="display:grid;gap:12px;margin-top:16px" id="ann-list"></div>
+      </div>
+      <div style="display:grid;gap:20px;align-content:start;min-width:0">
+        <div class="panel">
+          <div class="panel-head"><h3>Cara memberi akses</h3></div>
+          <ol class="steps">
+            <li>Kirim alamat situs ini ke PIC mitra. Mitra membuat akun sendiri lewat <strong>Daftar akun baru</strong>.</li>
+            <li>Setelah masuk, mitra memilih PLTU dan nama perusahaannya, lalu mengirim permintaan akses.</li>
+            <li>Setujui di tabel di atas. Anda bisa mengoreksi PLTU atau nama mitra sebelum menyetujui.</li>
+            <li>Mitra hanya bisa membaca dan mengisi data perusahaannya sendiri. Pembatasan ini dijaga oleh database, bukan hanya tampilan.</li>
+            <li>Staf PLN EPI mendaftar dengan mencentang "Saya staf PLN EPI", lalu Anda setujui sebagai staf.</li>
+          </ol>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Tim manager PLN EPI</h3><p>Akun dengan akses penuh</p></div>
+          <div class="tbl-wrap"><table id="tbl-staff"></table></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="wrap" id="foot"></footer>
+<div id="tip" hidden></div>
+<div id="toast" hidden></div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js?v=202611171337"></script>
+<script src="app.js?v=202611171337"></script>
+</body>
+</html>

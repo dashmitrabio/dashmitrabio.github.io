@@ -340,6 +340,15 @@ kbd{font:inherit;font-size:11px;padding:0 4px;border:1px solid var(--line);borde
 .kp-add{justify-self:start;border:1px dashed var(--line);background:transparent;color:var(--accent);font:inherit;font-size:12px;font-weight:600;padding:5px 10px;border-radius:6px;cursor:pointer}
 @media (max-width:560px){.kp-row{grid-template-columns:1fr}.kp-l{padding-top:0}}
 .appr-k{flex-basis:100%;font-size:11px;color:var(--muted);padding-left:24px}
+.ns-sum{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.ns-sum .kp{border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-width:150px}
+.ns-sum .kp b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.ns-sum .kp span{font-size:12px;color:var(--muted)}
+#tbl-ns td{vertical-align:middle}
+#ns-panel .tbl-wrap{max-height:560px;overflow:auto}
+#tbl-ns thead th{position:sticky;top:0;background:var(--surface);z-index:1}
+#tbl-ns .wa{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--good-ink);text-decoration:none;border:1px solid var(--line);border-radius:6px;padding:3px 8px;white-space:nowrap}
+.ym-head .row select{width:auto}
 .flabel{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
 .pick-list{display:flex;flex-wrap:wrap;gap:8px}
 .pick{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:13px;cursor:pointer;background:var(--surface)}
@@ -508,6 +517,13 @@ tr.mng-row>td{background:var(--surface-2,transparent)}
       <div class="panel-head ym-head"><div><h2 id="ym-title">Rekap bulanan &amp; akumulasi</h2><p id="ym-sub"></p></div><select id="ym-plant" aria-label="Pilih PLTU untuk rekap bulanan"></select></div>
       <div class="tbl-wrap"><table id="tbl-ym"></table></div>
       <p class="hint" style="margin:10px 0 0">Januari–Maret dari sheet Rekap Excel; April dan seterusnya dari data harian (Excel + laporan online mitra). % akumulasi dihitung terhadap Target Waiver tahunan. *DO bulan berjalan pada baris total dihitung prorata sampai hari ini. Warna bilah % DO: <span style="color:var(--good-ink);font-weight:600">hijau</span> = mencapai/di atas DO, <span style="color:var(--crit-ink);font-weight:600">merah</span> = di bawah DO, <span style="color:var(--warn-ink);font-weight:600">kuning</span> = bulan berjalan.</p>
+    </div>
+    <div class="panel" id="ns-panel">
+      <div class="panel-head ym-head"><div><h2 id="ns-title">Mitra belum input</h2><p id="ns-sub"></p></div>
+        <div class="row"><select id="ns-plant" aria-label="Filter PLTU"></select><select id="ns-scope" aria-label="Cakupan mitra"><option value="30">Mitra aktif 30 hari terakhir</option><option value="90">Mitra aktif 90 hari terakhir</option><option value="all">Semua mitra</option></select><label class="hint" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ns-ok" style="width:auto"> Tampilkan yang sudah lengkap</label></div></div>
+      <div class="ns-sum" id="ns-sum"></div>
+      <div class="tbl-wrap"><table id="tbl-ns"></table></div>
+      <p class="hint" style="margin:10px 0 0">Input dihitung dari laporan online mitra maupun angka di Excel, termasuk laporan 0 MT dengan kendala. "Hari tanpa input" dihitung sampai H-1 (kemarin). Tombol WhatsApp membuka pesan pengingat ke PIC akun mitra bila sudah terdaftar.</p>
     </div>
     <div class="grid-2">
       <div class="panel">
@@ -715,7 +731,7 @@ tr.mng-row>td{background:var(--surface-2,transparent)}
 
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=202611171337"></script>
-<script src="app.js?v=202611171337"></script>
+<script src="config.js?v=202611231406"></script>
+<script src="app.js?v=202611231406"></script>
 </body>
 </html>

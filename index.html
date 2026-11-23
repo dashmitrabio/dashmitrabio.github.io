@@ -345,7 +345,11 @@ kbd{font:inherit;font-size:11px;padding:0 4px;border:1px solid var(--line);borde
 .ns-sum .kp b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
 .ns-sum .kp span{font-size:12px;color:var(--muted)}
 #tbl-ns td{vertical-align:middle}
-#ns-panel .tbl-wrap{max-height:560px;overflow:auto}
+#ns-panel .tbl-wrap{max-height:600px;overflow:auto}
+.ns-pl{display:flex;flex-wrap:wrap;gap:4px}
+.ns-chip{font-size:11.5px;padding:2px 7px;border-radius:5px;white-space:nowrap;background:var(--surface-2);color:var(--ink-2)}
+.ns-chip b{font-weight:600}
+.ns-chip.kritis{background:var(--crit-bg);color:var(--crit-ink)} .ns-chip.waspada{background:var(--warn-bg);color:var(--warn-ink)} .ns-chip.aman{background:var(--good-bg);color:var(--good-ink)}
 #tbl-ns thead th{position:sticky;top:0;background:var(--surface);z-index:1}
 #tbl-ns .wa{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--good-ink);text-decoration:none;border:1px solid var(--line);border-radius:6px;padding:3px 8px;white-space:nowrap}
 .ym-head .row select{width:auto}
@@ -520,10 +524,10 @@ tr.mng-row>td{background:var(--surface-2,transparent)}
     </div>
     <div class="panel" id="ns-panel">
       <div class="panel-head ym-head"><div><h2 id="ns-title">Mitra belum input</h2><p id="ns-sub"></p></div>
-        <div class="row"><select id="ns-plant" aria-label="Filter PLTU"></select><select id="ns-scope" aria-label="Cakupan mitra"><option value="30">Mitra aktif 30 hari terakhir</option><option value="90">Mitra aktif 90 hari terakhir</option><option value="all">Semua mitra</option></select><label class="hint" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ns-ok" style="width:auto"> Tampilkan yang sudah lengkap</label></div></div>
+        <div class="row"><select id="ns-plant" aria-label="Filter mitra per PLTU"></select><select id="ns-scope" aria-label="Cakupan mitra"><option value="30">Mitra aktif 30 hari terakhir</option><option value="90">Mitra aktif 90 hari terakhir</option><option value="all">Semua mitra</option></select><label class="hint" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ns-ok" style="width:auto"> Tampilkan yang sudah lengkap</label></div></div>
       <div class="ns-sum" id="ns-sum"></div>
       <div class="tbl-wrap"><table id="tbl-ns"></table></div>
-      <p class="hint" style="margin:10px 0 0">Input dihitung dari laporan online mitra maupun angka di Excel, termasuk laporan 0 MT dengan kendala. "Hari tanpa input" dihitung sampai H-1 (kemarin). Tombol WhatsApp membuka pesan pengingat ke PIC akun mitra bila sudah terdaftar.</p>
+      <p class="hint" style="margin:10px 0 0">Input dihitung dari laporan online mitra maupun angka di Excel, termasuk laporan 0 MT dengan kendala. "Hari tanpa input" dihitung sampai H-1 (kemarin). Satu baris per perusahaan mitra; label berwarna menunjukkan input terakhir di tiap PLTU yang dipasoknya. Tombol WhatsApp membuka pesan pengingat ke PIC akun mitra (berisi daftar PLTU yang tertinggal) bila sudah terdaftar.</p>
     </div>
     <div class="grid-2">
       <div class="panel">
@@ -731,7 +735,7 @@ tr.mng-row>td{background:var(--surface-2,transparent)}
 
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=202611231406"></script>
-<script src="app.js?v=202611231406"></script>
+<script src="config.js?v=202611231416"></script>
+<script src="app.js?v=202611231416"></script>
 </body>
 </html>

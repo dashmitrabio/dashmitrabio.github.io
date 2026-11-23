@@ -343,37 +343,45 @@ function renderNotSubmitted(){
   const M=S.M; const t=todayLocal(); const y=new Date(t+'T00:00:00'); y.setDate(y.getDate()-1);
   const h1=y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
   const psel=$('#ns-plant');
-  if(!psel.options.length){ psel.innerHTML='<option value="">Semua PLTU</option>'+M.plants.map(p=>`<option>${esc(p.name)}</option>`).join('');
+  if(!psel.options.length){ psel.innerHTML='<option value="">Mitra di semua PLTU</option>'+M.plants.map(p=>`<option>${esc(p.name)}</option>`).join('');
     psel.onchange=renderNotSubmitted; $('#ns-scope').onchange=renderNotSubmitted; $('#ns-ok').onchange=renderNotSubmitted; }
   const last=new Map();   // partner_id -> {d, src, uid}
   for(const r of S.rows||[]){ if(r.tanggal>h1) continue; const o=last.get(r.partner_id); if(!o||r.tanggal>o.d) last.set(r.partner_id,{d:r.tanggal,src:r.sumber,uid:r.user_id}); }
   const days=(a,b)=>Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/864e5);
   const scope=$('#ns-scope').value, fp=psel.value, showOk=$('#ns-ok').checked;
   const order=new Map(M.plants.map((p,i)=>[p.name,i]));
-  let list=S.partnersRaw.filter(p=>!fp||p.plant===fp).map(p=>{ const l=last.get(p.id); return {p,last:l?.d||null,src:l?.src||'',gap:l?days(l.d,h1):null}; });
-  if(scope!=='all') list=list.filter(x=>x.last&&x.gap<=+scope);
-  const pending=list.filter(x=>x.gap!==0), done=list.filter(x=>x.gap===0);
-  // PIC akun yang terhubung ke mitra
-  const picOf=pid=>{ const a=S.akses.filter(a=>a.partner_id===pid).map(a=>S.profiles.find(p=>p.id===a.user_id)).filter(p=>p&&p.role==='mitra'); return a[0]||null; };
+  // satu baris per perusahaan mitra (singkatan EPI), berisi semua PLTU yang dipasoknya
+  let pairs=S.partnersRaw.map(p=>{ const l=last.get(p.id); return {p,last:l?.d||null,src:l?.src||'',gap:l?days(l.d,h1):null}; });
+  if(scope!=='all') pairs=pairs.filter(x=>x.last&&x.gap<=+scope);
+  const byCo=new Map(); for(const x of pairs){ const g=byCo.get(x.p.name)||[]; g.push(x); byCo.set(x.p.name,g); }
+  let cos=[...byCo.entries()].map(([name,ps])=>{ ps.sort((a,b)=>order.get(a.p.plant)-order.get(b.p.plant));
+    const lastAll=ps.reduce((m,x)=>x.last&&(!m||x.last>m)?x.last:m,null);
+    const late=ps.filter(x=>x.gap!==0); const worst=late.reduce((m,x)=>x.gap==null?1e9:Math.max(m,x.gap),0);
+    return {name,ps,lastAll,late,worst:late.length?worst:0,full:ps.find(x=>x.p.nama_lengkap)?.p.nama_lengkap||''}; });
+  if(fp) cos=cos.filter(c=>c.ps.some(x=>x.p.plant===fp));
+  const pending=cos.filter(c=>c.late.length), done=cos.filter(c=>!c.late.length);
+  const pics=c=>{ const ids=new Set(c.ps.map(x=>x.p.id)); const seen=new Set(); return S.akses.filter(a=>ids.has(a.partner_id)).map(a=>S.profiles.find(p=>p.id===a.user_id)).filter(p=>p&&p.role==='mitra'&&!seen.has(p.id)&&seen.add(p.id)); };
   const waNum=hp=>{ let n=String(hp||'').replace(/\D/g,''); if(n.startsWith('0')) n='62'+n.slice(1); return n.length>=9?n:''; };
-  const sorted=[...pending].sort((a,b)=>(b.gap??1e9)-(a.gap??1e9)||order.get(a.p.plant)-order.get(b.p.plant));
-  const rows=[...sorted,...(showOk?done.sort((a,b)=>order.get(a.p.plant)-order.get(b.p.plant)):[])];
-  const sev=g=>g==null?'kritis':g>=7?'kritis':g>=3?'waspada':g>=1?'info':'aman';
-  const lbl=g=>g==null?'Belum pernah':g===0?'Lengkap':g+' hari';
+  const sev=g=>g==null||g>=1e9?'kritis':g>=7?'kritis':g>=3?'waspada':g>=1?'info':'aman';
+  const lbl=g=>g==null||g>=1e9?'Belum pernah':g===0?'Lengkap':g+' hari';
+  const DW=['Min','Sen','Sel','Rab','Kam','Jum','Sab']; const dd=d=>`${DW[new Date(d+'T00:00:00').getDay()]}, ${dLong(d)}`;
+  const rows=[...pending.sort((a,b)=>b.worst-a.worst||b.late.length-a.late.length||normCo(a.name).localeCompare(normCo(b.name))),
+    ...(showOk?done.sort((a,b)=>normCo(a.name).localeCompare(normCo(b.name))):[])];
   $('#ns-title').textContent=`Mitra belum input s/d ${dLong(h1)} (H-1)`;
-  $('#ns-sub').textContent=`${fp?'PLTU '+fp:'Semua PLTU'} · ${scope==='all'?'semua mitra':'mitra yang mengirim dalam '+scope+' hari terakhir'} · Excel terakhir disinkronkan ${M.asOf?dLong(M.asOf):'-'}`;
-  const c7=pending.filter(x=>x.gap==null||x.gap>=7).length, c3=pending.filter(x=>x.gap!=null&&x.gap>=3&&x.gap<7).length, c1=pending.filter(x=>x.gap!=null&&x.gap>=1&&x.gap<3).length;
-  $('#ns-sum').innerHTML=`<div class="kp"><b>${pending.length}<small style="font-size:12px;font-weight:400"> / ${list.length}</small></b><span>mitra belum input s/d H-1</span></div>
-    <div class="kp"><b style="color:var(--crit-ink)">${c7}</b><span>≥ 7 hari tanpa input</span></div><div class="kp"><b style="color:var(--warn-ink)">${c3}</b><span>3–6 hari</span></div><div class="kp"><b>${c1}</b><span>1–2 hari</span></div><div class="kp"><b style="color:var(--good-ink)">${done.length}</b><span>sudah lengkap s/d H-1</span></div>`;
-  $('#tbl-ns').innerHTML=rows.length?`<thead><tr><th>PLTU</th><th>Mitra</th><th>Terakhir input</th><th class="r">Hari tanpa input</th><th>Sumber terakhir</th><th>PIC akun</th><th></th></tr></thead><tbody>${rows.map(x=>{ const pic=picOf(x.p.id); const wa=pic&&waNum(pic.hp);
-      const msg=`Yth. ${pic?.nama||x.p.name}, mohon segera input realisasi pasokan ${x.p.name} ke PLTU ${x.p.plant}${x.last?` sejak ${dLong(x.last)}`:''} di https://dashmitrabio.github.io . Terima kasih. — PLN EPI Kalimantan`;
-      const dow=x.last?['Min','Sen','Sel','Rab','Kam','Jum','Sab'][new Date(x.last+'T00:00:00').getDay()]:'';
-      return `<tr><td>${esc(x.p.plant)}</td><td><strong>${esc(x.p.name)}</strong>${x.p.nama_lengkap?`<br><span class="hint">${esc(x.p.nama_lengkap)}</span>`:''}</td>
-        <td class="num">${x.last?`${dow}, ${dLong(x.last)}`:'—'}</td><td class="r"><span class="pill ${sev(x.gap)}">${lbl(x.gap)}</span></td>
-        <td class="hint">${x.src==='online'?'Laporan online':x.src==='excel'?'Excel':'—'}</td>
-        <td>${pic?`${esc(pic.nama||pic.username||'')}${pic.hp?`<br><span class="mono hint">${esc(pic.hp)}</span>`:''}`:'<span class="hint">Belum punya akun</span>'}</td>
-        <td>${wa&&x.gap!==0?`<a class="wa" href="https://wa.me/${wa}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">WhatsApp</a>`:''}</td></tr>`; }).join('')}</tbody>`
-    :`<tbody><tr><td class="empty">${pending.length?'':'Semua mitra pada cakupan ini sudah input sampai '+dLong(h1)+'.'}</td></tr></tbody>`;
+  $('#ns-sub').textContent=`${fp?'Mitra yang memasok PLTU '+fp:'Semua mitra'} · ${scope==='all'?'termasuk yang tidak aktif':'aktif mengirim dalam '+scope+' hari terakhir'} · Excel terakhir disinkronkan ${M.asOf?dLong(M.asOf):'-'}`;
+  const c7=pending.filter(c=>c.worst>=7).length, c3=pending.filter(c=>c.worst>=3&&c.worst<7).length, c1=pending.filter(c=>c.worst>=1&&c.worst<3).length;
+  $('#ns-sum').innerHTML=`<div class="kp"><b>${pending.length}<small style="font-size:12px;font-weight:400"> / ${cos.length}</small></b><span>mitra belum input s/d H-1</span></div>
+    <div class="kp"><b style="color:var(--crit-ink)">${c7}</b><span>tertinggal ≥ 7 hari</span></div><div class="kp"><b style="color:var(--warn-ink)">${c3}</b><span>3–6 hari</span></div><div class="kp"><b>${c1}</b><span>1–2 hari</span></div><div class="kp"><b style="color:var(--good-ink)">${done.length}</b><span>mitra lengkap s/d H-1</span></div>`;
+  $('#tbl-ns').innerHTML=rows.length?`<thead><tr><th>Mitra</th><th>PLTU yang dipasok · input terakhir</th><th>Input terakhir (semua PLTU)</th><th class="r">Tertinggal</th><th>PIC akun</th><th></th></tr></thead><tbody>${rows.map(c=>{
+      const pc=pics(c); const pic=pc.find(p=>waNum(p.hp))||pc[0]; const wa=pic&&waNum(pic.hp);
+      const telat=c.late.map(x=>`- PLTU ${x.p.plant}: ${x.last?'terakhir '+dLong(x.last):'belum pernah input'}`).join('\n');
+      const msg=`Yth. ${pic?.nama||c.name},\nMohon segera input realisasi pasokan ${c.name} di https://dashmitrabio.github.io untuk:\n${telat}\nTerima kasih.\n— PLN EPI Kalimantan`;
+      return `<tr><td><strong>${esc(c.name)}</strong>${c.full?`<br><span class="hint">${esc(c.full)}</span>`:''}<br><span class="hint">${c.ps.length} PLTU${c.late.length?` · ${c.late.length} belum input`:''}</span></td>
+        <td><div class="ns-pl">${c.ps.map(x=>`<span class="ns-chip ${sev(x.gap)}" title="${esc(x.last?'Input terakhir '+dd(x.last)+(x.src==='online'?' (laporan online)':' (Excel)'):'Belum pernah input')}"><b>${esc(x.p.plant)}</b> ${x.last?dLabel(x.last):'—'} · ${lbl(x.gap)}</span>`).join('')}</div></td>
+        <td class="num">${c.lastAll?dd(c.lastAll):'—'}</td><td class="r"><span class="pill ${sev(c.worst)}">${lbl(c.worst)}</span></td>
+        <td>${pc.length?pc.map(p=>`${esc(p.nama||p.username||'')}${p.hp?` <span class="mono hint">${esc(p.hp)}</span>`:''}`).join('<br>'):'<span class="hint">Belum punya akun</span>'}</td>
+        <td>${wa&&c.late.length?`<a class="wa" href="https://wa.me/${wa}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">WhatsApp</a>`:''}</td></tr>`; }).join('')}</tbody>`
+    :`<tbody><tr><td class="empty">Semua mitra pada cakupan ini sudah input sampai ${dLong(h1)}.</td></tr></tbody>`;
 }
 function renderYearMonths(){
   const M=S.M, sel=$('#ym-plant'); const ps=M.plants;

@@ -557,6 +557,12 @@ tr.mng-row>td{background:var(--surface-2,transparent)}
   <!-- ===== MANAGER: per PLTU ===== -->
   <section class="view" id="v-pltu" hidden>
     <div class="plant-pick" id="plant-pick" role="group" aria-label="Pilih PLTU"></div>
+    <div class="panel" id="dm-panel">
+      <div class="panel-head ym-head"><div><h2 id="dm-title">Realisasi harian per mitra</h2><p id="dm-sub"></p></div>
+        <div class="row"><select id="dm-month" aria-label="Pilih bulan"></select><button class="btn ghost sm" type="button" id="dm-csv">Unduh CSV</button></div></div>
+      <div class="tbl-wrap dm-wrap"><table id="tbl-dm"></table></div>
+      <p class="hint" style="margin:10px 0 0">MT per hari. <span class="dm-on">Angka hijau</span> = laporan online mitra, angka biasa = dari Excel, kosong = tidak ada pengiriman. Kolom terakhir: total harian dan akumulasi bulan dibanding DO bulan ini.</p>
+    </div>
     <div class="kpis" id="pkpis"></div>
     <div class="grid-2e">
       <div class="panel">
@@ -580,12 +586,6 @@ tr.mng-row>td{background:var(--surface-2,transparent)}
         <div class="chart" id="ch-month-plant"></div>
         <div class="legend"><span><i class="sw"></i>Realisasi</span><span><i class="sw line"></i>DO</span></div>
       </div>
-    </div>
-    <div class="panel" id="dm-panel">
-      <div class="panel-head ym-head"><div><h2 id="dm-title">Realisasi harian per mitra</h2><p id="dm-sub"></p></div>
-        <div class="row"><select id="dm-month" aria-label="Pilih bulan"></select><button class="btn ghost sm" type="button" id="dm-csv">Unduh CSV</button></div></div>
-      <div class="tbl-wrap dm-wrap"><table id="tbl-dm"></table></div>
-      <p class="hint" style="margin:10px 0 0">MT per hari. <span class="dm-on">Angka hijau</span> = laporan online mitra, angka biasa = dari Excel, kosong = tidak ada pengiriman. Kolom terakhir: total harian dan akumulasi bulan dibanding DO bulan ini.</p>
     </div>
     <div>
       <div class="panel">
@@ -735,7 +735,7 @@ tr.mng-row>td{background:var(--surface-2,transparent)}
 
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=202611231416"></script>
-<script src="app.js?v=202611231416"></script>
+<script src="config.js?v=202611241144"></script>
+<script src="app.js?v=202611241144"></script>
 </body>
 </html>

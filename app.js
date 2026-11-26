@@ -68,7 +68,8 @@ const S={role:null,uid:null,email:'',profile:null,sb:null,geo:null,
   M:null,view:null,plant:null,deferIssues:false,filtersReady:false};
 try{ S.plant=localStorage.getItem('rmk.plant')||null; }catch(e){}
 const isMgr=()=>S.role==='manager'&&!S.preview;
-const errMsg=e=>e?.code==='42501'||/row-level security/i.test(e?.message||'')?'Akun Anda tidak berwenang untuk tindakan ini.':(e?.message||'Terjadi kesalahan. Coba lagi.');
+const errMsg0=e=>e?.code==='42501'||/row-level security/i.test(e?.message||'')?'Akun Anda tidak berwenang untuk tindakan ini.':(e?.message||'Terjadi kesalahan. Coba lagi.');
+const errMsg=e=>/ON CONFLICT|schema cache|column .* does not exist/i.test(e?.message||'')?'Halaman ini masih versi lama. Muat ulang halaman (tekan F5 / tarik ke bawah di HP), lalu simpan lagi.':errMsg0(e);
 
 /* ---------- manager model ---------- */
 function prepBase(){
@@ -1391,6 +1392,14 @@ async function loadMitra(){
   S.my.pct=Object.fromEntries((prog||[]).filter(x=>x.pct!=null).map(x=>[x.plant,+x.pct]));
   S.plantOrder=Object.fromEntries([...new Set(kat.map(k=>k.plant))].map((p,i)=>[p,i]));
 }
+/* Versi situs: halaman yang masih terbuka dengan kode lama dimuat ulang otomatis */
+const MY_VER=(document.querySelector('script[src*="app.js"]')?.src.match(/[?&]v=(\d+)/)||[])[1]||'';
+let verWarned=false;
+async function cekVersi(){ if(!MY_VER) return;
+  try{ const h=await fetch(location.pathname+'?cek='+Date.now(),{cache:'no-store'}).then(r=>r.text()); const v=(h.match(/app\.js\?v=(\d+)/)||[])[1];
+    if(!v||v===MY_VER) return;
+    if(!bulkDirty()&&!document.querySelector('#entry-form input:focus')){ location.reload(); return; }
+    if(!verWarned){ verWarned=true; toast('Versi baru dashboard tersedia. Simpan pekerjaan Anda lalu muat ulang halaman.'); } }catch(e){} }
 let loading=null, lastLoad=0;
 async function reload(){
   if(loading) return loading;
@@ -1400,7 +1409,7 @@ async function reload(){
       S.profile=prof; const role=prof?.role||'pending';
       if(role==='manager'){ S.role='manager'; await loadManager(); }
       else { if(S.role==='manager'){ S.preview=null; } S.role=role==='mitra'?'mitra':role==='dicabut'?'dicabut':'pending'; await loadMitra(); }
-      lastLoad=Date.now(); refresh();
+      lastLoad=Date.now(); refresh(); cekVersi();
     }catch(e){ console.error(e); toast('Gagal memuat data: '+errMsg(e)); }
     finally{ loading=null; }
   })();

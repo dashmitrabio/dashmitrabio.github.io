@@ -81,15 +81,17 @@ function prepBase(){
   S.entries=new Map();
   for(const r of S.rows){ const pa=S.pById.get(r.partner_id); if(!pa) continue;
     if(r.sumber==='excel'){ B.daily.push([pa.plant,pa.name,r.tanggal,+r.volume]); if(r.tanggal>B.asOf) B.asOf=r.tanggal; }
-    else { const id=pa.id+'-'+r.tanggal; S.entries.set(id,{id,pid:pa.id,plant:pa.plant,partner:pa.name,date:r.tanggal,volume:+r.volume,ritase:r.ritase,jenis:r.jenis,kendala:r.kendala,ket:r.ket,rencana:r.rencana,uid:r.user_id,pel:r.pelapor,at:r.updated_at}); } }
+    else { const k=r.kontrak||''; const id=pa.id+'-'+r.tanggal+'-'+k; S.entries.set(id,{id,pid:pa.id,kontrak:k,plant:pa.plant,partner:pa.name,date:r.tanggal,volume:+r.volume,ritase:r.ritase,jenis:r.jenis,kendala:r.kendala,ket:r.ket,rencana:r.rencana,uid:r.user_id,pel:r.pelapor,at:r.updated_at}); } }
   B.notes=S.catatan.map(c=>({plant:c.plant,partner:c.partner_id?(S.pById.get(c.partner_id)?.name||''):'',date:c.tanggal,text:c.teks}));
   S.base=B;
 }
 function build(){
   const B=S.base;
   const daily=new Map();
-  for(const [p,pa,d,v] of B.daily) daily.set(p+'|'+pa+'|'+d,{v,src:'excel'});
-  for(const e of S.entries.values()) daily.set(e.plant+'|'+e.partner+'|'+e.date,{v:+e.volume||0,src:'mitra',e});
+  for(const [p,pa,d,v] of B.daily) daily.set(p+'|'+pa+'|'+d,{v,src:'excel',parts:new Map([['',v]])});
+  for(const e of S.entries.values()){ const key=e.plant+'|'+e.partner+'|'+e.date; const o=daily.get(key);
+    if(o&&o.src==='mitra'){ o.v+=+e.volume||0; o.parts.set(e.kontrak,(o.parts.get(e.kontrak)||0)+(+e.volume||0)); if(e.kendala&&e.kendala!=='none') o.e=e; }
+    else daily.set(key,{v:+e.volume||0,src:'mitra',e,parts:new Map([[e.kontrak,+e.volume||0]])}); }
   let asOf=B.asOf; const today=todayLocal();
   for(const [k,o] of daily){ const d=k.slice(k.lastIndexOf('|')+1); if(o.v>0 && d>asOf && d<=today) asOf=d; }
   const plants=B.plants.map(p=>({...p,targetXls:p.targetFGD,partners:new Map(),byDate:new Map()}));
@@ -100,6 +102,7 @@ function build(){
     let X=P.partners.get(pa);
     if(!X){X={name:pa,type:o.e?.jenis||'',contracts:[],byDate:new Map(),src:new Map(),isNew:true};P.partners.set(pa,X);}
     X.byDate.set(d,(X.byDate.get(d)||0)+o.v); X.src.set(d,o.src);
+    if(!X.byK) X.byK=new Map(); for(const [kk,vv] of o.parts){ const m=X.byK.get(kk)||new Map(); m.set(d,(m.get(d)||0)+vv); X.byK.set(kk,m); }
     P.byDate.set(d,(P.byDate.get(d)||0)+o.v);
   }
   const curM=+asOf.slice(5,7)-1, dayOfM=+asOf.slice(8,10), dim=new Date(Date.UTC(2026,curM+1,0)).getUTCDate();
@@ -467,25 +470,29 @@ function renderDailyMatrix(P){
   if(!sel.options.length){ sel.innerHTML=Array.from({length:M.curM+1},(_,i)=>i).reverse().map(i=>`<option value="${i}">${MONTHS_L[i]} 2026</option>`).join(''); sel.value=String(M.curM); sel.onchange=()=>renderDailyMatrix(curPlant()); }
   const m=+sel.value, mm=String(m+1).padStart(2,'0'), days=new Date(2026,m+1,0).getDate();
   const dates=Array.from({length:days},(_,i)=>`2026-${mm}-${String(i+1).padStart(2,'0')}`);
-  const cols=[...P.partners.values()].filter(X=>dates.some(d=>X.byDate.get(d)>0)).sort((a,b)=>{ const s=X=>dates.reduce((t,d)=>t+(X.byDate.get(d)||0),0); return s(b)-s(a); });
+  const mitraCols=[...P.partners.values()].filter(X=>dates.some(d=>X.byDate.get(d)>0)).sort((a,b)=>{ const s=X=>dates.reduce((t,d)=>t+(X.byDate.get(d)||0),0); return s(b)-s(a); });
+  // satu kolom per kontrak bila mitra melapor dengan lebih dari satu nomor kontrak di bulan ini
+  const cols=[]; for(const X of mitraCols){ const ks=[...(X.byK||new Map()).entries()].filter(([k,mp])=>dates.some(d=>mp.get(d)>0));
+    if(ks.length>1) ks.sort((a,b)=>(a[0]===''?1:0)-(b[0]===''?1:0)||a[0].localeCompare(b[0])).forEach(([k,mp])=>cols.push({name:X.name,sub:k||'tanpa rincian kontrak',get:d=>mp.get(d)||0,on:d=>k!==''||X.src.get(d)==='mitra',X}));
+    else cols.push({name:X.name,sub:ks[0]?.[0]||'',get:d=>X.byDate.get(d)||0,on:d=>X.src.get(d)==='mitra'||X.src.get(d)==='online',X}); }
   const doM=+(P.do?.[m])||0;
   $('#dm-title').textContent=`Realisasi harian per mitra — PLTU ${P.name}`;
-  $('#dm-sub').textContent=`${MONTHS_L[m]} 2026 · ${cols.length} mitra mengirim · DO ${doM?f0(doM)+' MT':'—'}`;
+  $('#dm-sub').textContent=`${MONTHS_L[m]} 2026 · ${mitraCols.length} mitra mengirim · DO ${doM?f0(doM)+' MT':'—'}`;
   if(m<3){ $('#tbl-dm').innerHTML=`<tbody><tr><td class="empty">Januari–Maret hanya tersedia sebagai total bulanan dari sheet Rekap (${f1(P.monthly[m])} MT). Data harian tersedia mulai April.</td></tr></tbody>`; $('#dm-csv').disabled=true; return; }
   $('#dm-csv').disabled=false;
   if(!cols.length){ $('#tbl-dm').innerHTML=`<tbody><tr><td class="empty">Belum ada pengiriman tercatat di ${MONTHS_L[m]}.</td></tr></tbody>`; return; }
   const today=M.asOf; let cum=0; const colTot=cols.map(()=>0);
   const body=dates.map((d,i)=>{ const dow=new Date(2026,m,i+1).getDay(); const fut=d>today; let tot=0;
-    const cells=cols.map((X,j)=>{ const v=X.byDate.get(d)||0; tot+=v; colTot[j]+=v; const on=X.src.get(d)==='mitra'||X.src.get(d)==='online'; return `<td class="r num${on?' on':''}"${on?' title="Laporan online mitra"':''}>${v>0?f1(v):''}</td>`; }).join('');
+    const cells=cols.map((C,j)=>{ const v=C.get(d); tot+=v; colTot[j]+=v; const on=v>0&&C.on(d); return `<td class="r num${on?' on':''}"${on?' title="Laporan online mitra"':''}>${v>0?f1(v):''}</td>`; }).join('');
     cum+=tot; const pctDo=doM?Math.round(cum/doM*100)+'%':'';
     return `<tr class="${dow===0?'wk':''}${fut?' fut':''}${d===today?' today':''}"><td>${i+1} <span class="hint">${DOW[dow]}</span></td>${cells}<td class="r num tot">${tot>0?f1(tot):fut?'':'0'}</td><td class="r num">${fut?'':f1(cum)}</td><td class="r num hint">${fut?'':pctDo}</td></tr>`; }).join('');
   const nDays=dates.filter(d=>d<=today).length||1;
-  $('#tbl-dm').innerHTML=`<thead><tr><th>Tgl</th>${cols.map(X=>`<th class="r mt" title="${esc(X.name)}">${esc(X.name)}</th>`).join('')}<th class="r tot">Total</th><th class="r">Akumulasi</th><th class="r">% DO</th></tr></thead><tbody>${body}</tbody>
+  $('#tbl-dm').innerHTML=`<thead><tr><th>Tgl</th>${cols.map(C=>`<th class="r mt" title="${esc(C.name+(C.sub?' · '+C.sub:''))}">${esc(C.name)}${C.sub?`<br><span class="mono hint" style="font-weight:400;text-transform:none;letter-spacing:0">${esc(C.sub)}</span>`:''}</th>`).join('')}<th class="r tot">Total</th><th class="r">Akumulasi</th><th class="r">% DO</th></tr></thead><tbody>${body}</tbody>
     <tfoot><tr><td>Total</td>${colTot.map(v=>`<td class="r num">${f1(v)}</td>`).join('')}<td class="r num tot">${f1(cum)}</td><td class="r num">${f1(cum)}</td><td class="r num">${doM?Math.round(cum/doM*100)+'%':'—'}</td></tr>
     <tr><td>Rata-rata/hari</td>${colTot.map(v=>`<td class="r num">${f1(v/nDays)}</td>`).join('')}<td class="r num tot">${f1(cum/nDays)}</td><td colspan="2" class="hint" style="font-weight:400">${doM?`perlu ${f1(doM/days)}/hari`:''}</td></tr></tfoot>`;
   $('#dm-csv').onclick=()=>{ const q=v=>`"${String(v).replace(/"/g,'""')}"`; const n=v=>String(Math.round(v*1000)/1000).replace('.',','); const SEP=';';
-    const lines=[[`Tanggal`,...cols.map(X=>X.name),'Total','Akumulasi'].map(q).join(SEP)]; let c=0;
-    for(const d of dates){ let t=0; const vs=cols.map(X=>{ const v=X.byDate.get(d)||0; t+=v; return v?n(v):''; }); c+=t; lines.push([d.split('-').reverse().join('/'),...vs,t?n(t):'',n(c)].map(q).join(SEP)); }
+    const lines=[[`Tanggal`,...cols.map(C=>C.name+(C.sub?' ('+C.sub+')':'')),'Total','Akumulasi'].map(q).join(SEP)]; let c=0;
+    for(const d of dates){ let t=0; const vs=cols.map(C=>{ const v=C.get(d); t+=v; return v?n(v):''; }); c+=t; lines.push([d.split('-').reverse().join('/'),...vs,t?n(t):'',n(c)].map(q).join(SEP)); }
     lines.push([q('Total'),...colTot.map(v=>q(n(v))),q(n(c)),q('')].join(SEP));
     const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`Realisasi harian ${P.name} ${MONTHS_L[m]} 2026.csv`; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500); };
 }
@@ -533,7 +540,10 @@ const fmtID=n=>n==null||isNaN(n)?'':new Intl.NumberFormat('id-ID',{maximumFracti
 const fmtIn=v=>v==null||v===''?'':String(Math.round(+v*1000)/1000).replace('.',',');
 function bulkPartner(){ const pl=$('#f-plant').value, pa=partnerName(); if(!pa||$('#f-partner').value==='__new') return null;
   if(isMgr()) return S.pByKey.get(pl+'|'+pa)||null; return mitraCtx()?.partners.find(x=>x.plant===pl&&x.name===pa)||null; }
-function bulkRows(pid){ const src=(isMgr()||S.preview)?S.rows:S.my.rows; const m=new Map(); for(const r of src||[]) if(r.partner_id===pid) m.set(r.tanggal,r); return m; }
+function bulkRows(pid,k=''){ const src=(isMgr()||S.preview)?S.rows:S.my.rows; const m=new Map(), x=new Map(), other=new Map();
+  for(const r of src||[]){ if(r.partner_id!==pid) continue; const rk=r.kontrak||'';
+    if(rk===k) m.set(r.tanggal,r); else if(r.sumber==='excel') x.set(r.tanggal,r); else other.set(r.tanggal,(other.get(r.tanggal)||0)+(+r.volume||0)); }
+  m.excel=x; m.other=other; return m; }
 function initBulk(){
   let mode='bulk'; try{ mode=localStorage.getItem('rmk.mode')||'bulk'; }catch(e){}
   const setMode=(m,force)=>{ if(m==='day'&&bulkDirty()){ toast('Simpan atau batalkan perubahan di tabel dulu'); return; } mode=m; try{localStorage.setItem('rmk.mode',m);}catch(e){}
@@ -551,10 +561,10 @@ function initBulk(){
 function renderBulk(force){
   if($('#bulk').hidden) return;
   const tb=$('#tbl-bulk'); const p=bulkPartner(); const m=+$('#b-month').value; const ro=!!S.preview;
-  const key=(p?p.id:'new:'+$('#f-plant').value+'|'+partnerName())+'|'+m;
+  const K=curK(); const key=(p?p.id:'new:'+$('#f-plant').value+'|'+partnerName())+'|'+m+'|'+K;
   if(!force&&key===B.key&&tb.contains(document.activeElement)) return;   // jangan ganggu yang sedang mengetik
   if(key!==B.key){ B.edits.clear(); B.key=key; const j=(p?.jenis||'').split('/')[0]; $('#b-jenis').value=['CS','WC','SD','PTK'].includes(j)?j:j?'Lain':$('#f-jenis').value; }
-  const rows=p?bulkRows(p.id):new Map(); B.orig=rows;
+  const rows=p?bulkRows(p.id,K):new Map(); B.orig=rows; B.k=K; const showX=!!K;
   const days=new Date(2026,m,0).getDate(), today=todayLocal();
   const kOpts=['none',...CAT_ORDER];
   let html='';
@@ -562,12 +572,12 @@ function renderBulk(force){
     const dow=new Date(2026,m-1,d).getDay(); const fut=ds>today; const dis=fut||ro?'disabled':'';
     html+=`<tr data-d="${ds}" class="${dow===0?'wk':''}${fut?' fut':''}${e?' dirty':''}">
       <td class="c-day">${d}<small>${DOW[dow]}</small></td>
-      <td class="c-vol"><input data-f="vol" inputmode="decimal" autocomplete="off" aria-label="MT tanggal ${d}" value="${esc(v.vol)}" ${dis}></td>
+      <td class="c-vol"><input data-f="vol" inputmode="decimal" autocomplete="off" aria-label="MT tanggal ${d}" value="${esc(v.vol)}" ${dis}></td>${showX?`<td class="r num hint" title="Angka di Excel PLN EPI (gabungan semua kontrak); diganti laporan online bila Anda mengisi">${rows.excel.get(ds)?f1(+rows.excel.get(ds).volume):rows.other.get(ds)?`<span title="Kontrak lain">+${f1(rows.other.get(ds))}</span>`:''}</td>`:''}
       <td class="c-rit"><input data-f="rit" inputmode="numeric" autocomplete="off" aria-label="Ritase tanggal ${d}" value="${esc(v.rit)}" ${dis}></td>
       <td class="c-kend"><select data-f="kend" aria-label="Kendala tanggal ${d}" ${dis}>${kOpts.map(k=>`<option value="${k}" ${k===v.kend?'selected':''}>${esc(k==='none'?'—':CATS[k].label)}</option>`).join('')}</select></td>
       <td class="c-ket"><input data-f="ket" maxlength="500" autocomplete="off" aria-label="Keterangan tanggal ${d}" value="${esc(v.ket)}" ${dis}></td>
       <td>${o?`<span class="src ${o.sumber==='excel'?'excel':'online'}" title="${o.sumber==='excel'?'Dari file Excel PLN EPI; bila diubah, angka Anda yang dipakai':'Laporan online'}">${o.sumber==='excel'?'Excel':'Online'}</span>`:''}</td></tr>`; }
-  tb.innerHTML=`<thead><tr><th>Tgl</th><th class="r">MT</th><th class="r">Ritase</th><th>Kendala</th><th>Keterangan</th><th>Sumber</th></tr></thead><tbody>${html}</tbody><tfoot><tr><td>Total</td><td class="r num" id="b-tot"></td><td class="r num" id="b-rit"></td><td colspan="3" class="hint" id="b-days" style="font-weight:400"></td></tr></tfoot>`;
+  tb.innerHTML=`<thead><tr><th>Tgl</th><th class="r">MT${K?` <span class="hint">${esc(K)}</span>`:''}</th>${showX?'<th class="r" title="Excel gabungan / kontrak lain">Excel · lain</th>':''}<th class="r">Ritase</th><th>Kendala</th><th>Keterangan</th><th>Sumber</th></tr></thead><tbody>${html}</tbody><tfoot><tr><td>Total</td><td class="r num" id="b-tot"></td>${showX?'<td></td>':''}<td class="r num" id="b-rit"></td><td colspan="3" class="hint" id="b-days" style="font-weight:400"></td></tr></tfoot>`;
   $('#b-err').hidden=true;
   tb.querySelectorAll('tbody tr').forEach(tr=>{
     tr.querySelectorAll('[data-f]').forEach(inp=>{
@@ -608,7 +618,7 @@ async function saveBulk(){
     else if(vol===0&&v.kend==='none') why='MT 0: pilih kendalanya';
     else if(v.kend!=='none'&&!v.ket) why='jelaskan kendala di kolom keterangan';
     if(why){ bad.push([ds,dd+': '+why]); continue; }
-    ups.push({tanggal:ds,volume:Math.round(vol*1000)/1000,ritase:v.rit?Math.round(rit):null,jenis:o?.jenis||jenis,kendala:v.kend,ket:v.ket||null,rencana:o?.rencana??null,sumber:'online',user_id:S.uid,updated_at:nowIso()}); }
+    ups.push({tanggal:ds,kontrak:B.k||'',volume:Math.round(vol*1000)/1000,ritase:v.rit?Math.round(rit):null,jenis:o?.jenis||jenis,kendala:v.kend,ket:v.ket||null,rencana:o?.rencana??null,sumber:'online',user_id:S.uid,updated_at:nowIso()}); }
   $('#tbl-bulk').querySelectorAll('tbody tr').forEach(tr=>tr.classList.toggle('bad',bad.some(b=>b[0]===tr.dataset.d)));
   if(bad.length){ err.innerHTML='Perbaiki dulu baris yang ditandai merah:<br>'+bad.map(b=>esc(b[1])).join('<br>'); err.hidden=false; const f=$('#tbl-bulk').querySelector(`tr[data-d="${bad[0][0]}"] input`); f?.focus(); return; }
   const btn=$('#b-save'); btn.disabled=true; btn.textContent='Menyimpan…';
@@ -617,8 +627,8 @@ async function saveBulk(){
     if(!p&&isMgr()&&$('#f-partner').value==='__new'){ const pa=partnerName(); if(!pa) throw new Error('Isi nama mitra baru.');
       const {data,error}=await S.sb.from('partners').insert({plant:$('#f-plant').value,name:pa,jenis}).select().single(); if(error) throw error; p=data; }
     if(!p) throw new Error('Mitra tidak ditemukan.');
-    if(ups.length){ const {error}=await S.sb.from('realisasi').upsert(ups.map(r=>({...r,partner_id:p.id})),{onConflict:'partner_id,tanggal'}); if(error) throw error; }
-    if(dels.length){ const {error}=await S.sb.from('realisasi').delete().eq('partner_id',p.id).eq('sumber','online').in('tanggal',dels); if(error) throw error; }
+    if(ups.length){ const {error}=await S.sb.from('realisasi').upsert(ups.map(r=>({...r,partner_id:p.id})),{onConflict:'partner_id,tanggal,kontrak'}); if(error) throw error; }
+    if(dels.length){ const {error}=await S.sb.from('realisasi').delete().eq('partner_id',p.id).eq('sumber','online').eq('kontrak',B.k||'').in('tanggal',dels); if(error) throw error; }
     B.edits.clear(); B.key='';
     toast(`${ups.length} laporan tersimpan${dels.length?`, ${dels.length} dihapus`:''}`);
     await reload(); if($('#f-partner').value==='__new'){ fillPartners(p.name); } renderBulk(true);
@@ -649,6 +659,7 @@ function initForm(){
   const guard=(el,fn)=>{ el.dataset.prev=el.value; el.onfocus=()=>{el.dataset.prev=el.value;}; el.onchange=()=>{ if(bulkDirty()){ el.value=el.dataset.prev; toast('Simpan atau batalkan perubahan di tabel dulu'); return; } el.dataset.prev=el.value; fn(); }; };
   guard($('#f-plant'),()=>{fillPartners();onFormKey();});
   guard($('#f-partner'),()=>{ $('#wrap-new').hidden=$('#f-partner').value!=='__new'; setJenis(); onFormKey(); });
+  guard($('#f-kontrak'),()=>{ const p=curPartnerObj(); try{ localStorage.setItem('rmk.k.'+(p?.id||''),$('#f-kontrak').value); }catch(e){} onFormKey(); });
   $('#f-date').onchange=onFormKey;
   $('#entry-form').onsubmit=submitEntry;
   ['#f-vol','#f-rencana'].forEach(id=>{ const i=$(id); i.oninput=()=>bacaAngka(i); i.onblur=()=>{ const n=parseNum(i.value); if(n!=null&&!isNaN(n)) i.value=fmtIn(n); bacaAngka(i); }; });
@@ -669,19 +680,33 @@ function fillPartners(sel){
 }
 function setJenis(){ const t=(formScope().typeOf($('#f-plant').value,$('#f-partner').value)||'').split('/')[0]; if(t) $('#f-jenis').value=['CS','WC','SD','PTK'].includes(t)?t:'Lain'; }
 function partnerName(){ return $('#f-partner').value==='__new' ? $('#f-partner-new').value.trim().replace(/\|/g,'/').replace(/\s+/g,' ') : $('#f-partner').value; }
-function findEntry(pl,pa,d){
-  if(isMgr()){ const p=S.pByKey.get(pl+'|'+pa); return p?S.entries.get(p.id+'-'+d)||null:null; }
-  const c=mitraCtx(); const o=c?.series.get(pl+'|'+pa)?.get(d); return o&&o.src==='online'?o.e:null;
+function findEntry(pl,pa,d,k=curK()){
+  if(isMgr()){ const p=S.pByKey.get(pl+'|'+pa); return p?S.entries.get(p.id+'-'+d+'-'+k)||null:null; }
+  const c=mitraCtx(); const o=c?.series.get(pl+'|'+pa)?.get(d); return o&&o.src==='online'?o.byK.get(k)||null:null;
+}
+/* ---------- nomor kontrak per mitra ---------- */
+const kontrakOf=p=>p?[...new Set([...(p.kontrak||[]),...(p.kontrak_tambahan||[])].map(x=>String(x).trim()).filter(Boolean))]:[];
+function curPartnerObj(){ const pl=$('#f-plant').value, pa=partnerName(); if(!pa||$('#f-partner').value==='__new') return null;
+  return isMgr()?S.pByKey.get(pl+'|'+pa)||null:mitraCtx()?.partners.find(x=>x.plant===pl&&x.name===pa)||null; }
+const curK=()=>{ const w=$('#wrap-kontrak'); return w&&!w.hidden?$('#f-kontrak').value:''; };
+function fillKontrak(){ const p=curPartnerObj(); const ks=kontrakOf(p); const sel=$('#f-kontrak'); const cur=sel.value;
+  const lama=p&&ks.length&&((isMgr()||S.preview)?S.rows:S.my.rows||[]).some(r=>r.partner_id===p.id&&r.sumber==='online'&&!(r.kontrak||''));
+  sel.innerHTML=ks.map(k=>`<option value="${esc(k)}">${esc(k)}</option>`).join('')+(lama?'<option value="">Laporan lama (tanpa nomor kontrak)</option>':'');
+  if(ks.includes(cur)||(lama&&cur===''&&sel.dataset.pid===String(p?.id))) sel.value=cur; else { let keep=''; try{ keep=localStorage.getItem('rmk.k.'+(p?.id||''))||''; }catch(e){} if(ks.includes(keep)) sel.value=keep; }
+  $('#wrap-kontrak').hidden=!ks.length; sel.dataset.prev=sel.value; sel.dataset.pid=String(p?.id||'');
+  const pend=(isMgr()?S.kb:S.my.kb||[]).filter(x=>x.partner_id===p?.id&&x.status==='menunggu');
+  $('#kontrak-hint').textContent=ks.length>1?'Pilih kontrak yang dilaporkan; volume tiap kontrak dicatat terpisah.':pend.length?`Kontrak ${pend.map(x=>x.nomor).join(', ')} menunggu persetujuan.`:'';
 }
 function onFormKey(){
   const pl=$('#f-plant').value, pa=partnerName(), d=$('#f-date').value;
   try{localStorage.setItem('rmk.form',JSON.stringify({plant:pl,partner:$('#f-partner').value}));}catch(e){}
+  fillKontrak();
   const ex=pa&&d?findEntry(pl,pa,d):null;
   if(ex){ $('#f-vol').value=fmtIn(ex.volume); $('#f-rit').value=ex.ritase??''; $('#f-kendala').value=ex.kendala||'none'; $('#f-ket').value=ex.ket||''; $('#f-rencana').value=fmtIn(ex.rencana); if(ex.jenis)$('#f-jenis').value=ex.jenis;
     $('#f-exist').textContent='Sudah ada laporan untuk tanggal ini. Simpan untuk memperbarui.'; $('#f-submit').textContent='Perbarui laporan'; }
   else { ['#f-vol','#f-rit','#f-ket','#f-rencana'].forEach(s=>$(s).value=''); $('#f-kendala').value='none';
     let k=null; if(isMgr()) k=S.M.daily.get(pl+'|'+pa+'|'+d); else { const o=mitraCtx()?.series.get(pl+'|'+pa)?.get(d); if(o) k={v:o.v,src:o.src}; }
-    $('#f-exist').textContent=k&&k.src==='excel'?`Tercatat PLN EPI: ${f1(k.v)} MT. Laporan Anda akan menggantikannya.`:''; $('#f-submit').textContent='Simpan laporan'; }
+    $('#f-exist').textContent=k&&k.src==='excel'?`Tercatat PLN EPI (Excel${curK()?', gabungan semua kontrak':''}): ${f1(k.v)} MT. Laporan Anda akan menggantikannya.`:k&&k.src!=='excel'&&k.v>0?`Kontrak lain sudah dilaporkan hari ini: ${f1(k.v)} MT.`:''; $('#f-submit').textContent='Simpan laporan'; }
   renderInputSide();
   renderBulk();
 }
@@ -709,7 +734,8 @@ async function submitEntry(ev){
     else p=mitraCtx()?.partners.find(x=>x.plant===pl&&x.name===pa);
     if(!p) throw new Error('Mitra tidak ditemukan.');
     const row={partner_id:p.id,tanggal:d,volume:Math.round(vol*1000)/1000,ritase:num($('#f-rit').value),jenis:$('#f-jenis').value,kendala:kend,ket:ket||null,rencana:num($('#f-rencana').value),sumber:'online',user_id:S.uid,updated_at:nowIso()};
-    const {error}=await S.sb.from('realisasi').upsert(row,{onConflict:'partner_id,tanggal'}); if(error) throw error;
+    row.kontrak=curK();
+    const {error}=await S.sb.from('realisasi').upsert(row,{onConflict:'partner_id,tanggal,kontrak'}); if(error) throw error;
     toast('Laporan tersimpan'); await reload();
     if($('#f-partner').value==='__new') fillPartners(pa);
     onFormKey();
@@ -722,20 +748,20 @@ function renderInputSide(){
     const P=S.M.pm.get(pl); if(P){
       $('#chk-title').textContent='Status laporan '+pl; $('#chk-sub').textContent=d?dLong(d):'';
       const act=P.plist.filter(x=>x.since<=30||x.isNew);
-      $('#checklist').innerHTML=act.length?act.map(x=>{ const k=S.M.daily.get(pl+'|'+x.name+'|'+d); const pid=S.pByKey.get(pl+'|'+x.name)?.id; const e=S.entries.get(pid+'-'+d);
+      $('#checklist').innerHTML=act.length?act.map(x=>{ const k=S.M.daily.get(pl+'|'+x.name+'|'+d); const pid=S.pByKey.get(pl+'|'+x.name)?.id; const e=[...S.entries.values()].find(z=>z.pid===pid&&z.date===d&&z.kendala&&z.kendala!=='none');
         return `<div><span>${esc(x.name)}</span>${k?`<span class="yes num">${f1(k.v)} MT · ${k.src==='mitra'?'online':'Excel'}${e&&e.kendala&&e.kendala!=='none'?' · '+esc(CATS[e.kendala]?.label):''}</span>`:'<span class="no">Belum lapor</span>'}</div>`; }).join(''):'<p class="empty">Belum ada mitra aktif.</p>';
     }
   }
   let hist=[];
   if(isMgr()) hist=[...S.entries.values()].filter(e=>e.plant===pl&&e.partner===pa);
-  else { const c=mitraCtx(); const s=c?.series.get(pl+'|'+pa); if(s) for(const o of s.values()) if(o.src==='online') hist.push(o.e); }
-  hist.sort((a,b)=>b.date.localeCompare(a.date)); hist=hist.slice(0,12);
+  else { const c=mitraCtx(); const s=c?.series.get(pl+'|'+pa); if(s) for(const o of s.values()) if(o.src==='online') hist.push(...o.byK.values()); }
+  hist.sort((a,b)=>b.date.localeCompare(a.date)||(a.kontrak||'').localeCompare(b.kontrak||'')); hist=hist.slice(0,15);
   $('#hist-sub').textContent=pa?(pa+(formScope().plants.length>1?' · PLTU '+pl:'')):'';
-  $('#tbl-history').innerHTML=hist.length?`<thead><tr><th>Tanggal</th><th class="r">MT</th><th>Kendala</th>${isMgr()?'<th>Oleh</th>':''}<th></th></tr></thead><tbody>${hist.map(e=>`<tr><td class="num">${dLabel(e.date)}</td><td class="r num">${f1(e.volume)}</td><td>${e.kendala&&e.kendala!=='none'?`<span class="chip">${esc(CATS[e.kendala]?.label)}</span>`:'—'}</td>${isMgr()?`<td><span data-uid="${esc(e.uid||'')}" data-pel="${esc(e.pel||'')}" class="hint">—</span></td>`:''}<td class="r" style="white-space:nowrap">${S.preview?'':`<button class="btn ghost sm" data-edit="${esc(e.date)}" type="button">Ubah</button> ${isMgr()||e.uid===S.uid?`<button class="btn danger sm" data-del="${esc(e.date)}" data-pid="${esc(e.pid)}" type="button">Hapus</button>`:''}`}</td></tr>`).join('')}</tbody>`:'<tbody><tr><td class="empty">Belum ada laporan online untuk mitra ini.</td></tr></tbody>';
-  $('#tbl-history').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{$('#f-date').value=b.dataset.edit;onFormKey();$('#f-vol').focus();});
+  $('#tbl-history').innerHTML=hist.length?`<thead><tr><th>Tanggal</th><th class="r">MT</th><th>Kendala</th>${isMgr()?'<th>Oleh</th>':''}<th></th></tr></thead><tbody>${hist.map(e=>`<tr><td class="num">${dLabel(e.date)}${e.kontrak?`<br><span class="mono hint">${esc(e.kontrak)}</span>`:''}</td><td class="r num">${f1(e.volume)}</td><td>${e.kendala&&e.kendala!=='none'?`<span class="chip">${esc(CATS[e.kendala]?.label)}</span>`:'—'}</td>${isMgr()?`<td><span data-uid="${esc(e.uid||'')}" data-pel="${esc(e.pel||'')}" class="hint">—</span></td>`:''}<td class="r" style="white-space:nowrap">${S.preview?'':`<button class="btn ghost sm" data-edit="${esc(e.date)}" data-k="${esc(e.kontrak||'')}" type="button">Ubah</button> ${isMgr()||e.uid===S.uid?`<button class="btn danger sm" data-del="${esc(e.date)}" data-pid="${esc(e.pid)}" data-k="${esc(e.kontrak||'')}" type="button">Hapus</button>`:''}`}</td></tr>`).join('')}</tbody>`:'<tbody><tr><td class="empty">Belum ada laporan online untuk mitra ini.</td></tr></tbody>';
+  $('#tbl-history').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{ if(b.dataset.k&&!$('#wrap-kontrak').hidden) $('#f-kontrak').value=b.dataset.k; $('#f-date').value=b.dataset.edit;onFormKey();$('#f-vol').focus();});
   $('#tbl-history').querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{
     if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='Yakin hapus?';setTimeout(()=>{if(b.isConnected){b.dataset.armed='';b.textContent='Hapus';}},4000);return;}
-    const {error}=await S.sb.from('realisasi').delete().eq('partner_id',+b.dataset.pid).eq('tanggal',b.dataset.del);
+    const {error}=await S.sb.from('realisasi').delete().eq('partner_id',+b.dataset.pid).eq('tanggal',b.dataset.del).eq('kontrak',b.dataset.k||'');
     if(error) toast(errMsg(error)); else { toast('Laporan dihapus'); await reload(); onFormKey(); } });
   resolveNames($('#tbl-history'));
 }
@@ -834,6 +860,7 @@ function renderSync(){
 function renderAkses(){
   renderSync();
   renderInduk();
+  renderKontrakBaru();
   const M=S.M;
   const reqs=S.req.filter(r=>r.status!=='disetujui').sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
   $('#req-count').textContent=reqs.filter(r=>r.status==='menunggu').length+' menunggu';
@@ -946,7 +973,10 @@ function mitraCtx(){
     partners=[...partners].sort((a,b)=>plants.indexOf(a.plant)-plants.indexOf(b.plant)||a.name.localeCompare(b.name));
     const series=new Map(partners.map(p=>[pkey(p),new Map()]));
     for(const r of rows){ const p=partners.find(x=>x.id===r.partner_id); if(!p) continue;
-      series.get(pkey(p)).set(r.tanggal,{v:+r.volume,src:r.sumber,kendala:r.kendala,e:{pid:p.id,date:r.tanggal,volume:+r.volume,ritase:r.ritase,jenis:r.jenis,kendala:r.kendala,ket:r.ket,rencana:r.rencana,uid:r.user_id}}); }
+      const m=series.get(pkey(p)); const k=r.kontrak||''; const e={pid:p.id,kontrak:k,date:r.tanggal,volume:+r.volume,ritase:r.ritase,jenis:r.jenis,kendala:r.kendala,ket:r.ket,rencana:r.rencana,uid:r.user_id};
+      const o=m.get(r.tanggal);
+      if(o&&o.src==='online'&&r.sumber==='online'){ o.v+=+r.volume; o.byK.set(k,e); if(r.kendala&&r.kendala!=='none') o.kendala=r.kendala; }
+      else if(!o||r.sumber==='online') m.set(r.tanggal,{v:+r.volume,src:r.sumber,kendala:r.kendala,e,byK:new Map([[k,e]])}); }
     return {plants,plant:plants[0],partners,series,pct:pct||{},umpan,ann:ann.filter(a=>!a.plant||plants.includes(a.plant))};
   };
   if(S.preview){
@@ -992,6 +1022,7 @@ function renderBeranda(){
   $('#m-cta').hidden=!!S.preview;
   renderMultiPlant(ctx);
   renderPic();
+  renderKontrakSaya(ctx);
 }
 const normCo=s=>String(s||'').toLowerCase().replace(/\b(pt|cv|ud|kud|koperasi|tbk)\b/g,'').replace(/[^a-z0-9]/g,'');
 const sameCo=(a,b)=>{ a=normCo(a); b=normCo(b); if(a.length<2||b.length<2) return false; return a===b||(Math.min(a.length,b.length)>=5&&(a.includes(b)||b.includes(a))); };
@@ -1125,6 +1156,34 @@ async function pelajariNama(r,picks){
 }
 const fullName=p=>p?.nama_lengkap?`${p.name} — ${p.nama_lengkap}`:(p?.name||'');
 
+/* ---------- kontrak baru (mitra eksisting) ---------- */
+function renderKontrakSaya(ctx){
+  const box=$('#m-kontrak'); if(!ctx){ box.hidden=true; return; } box.hidden=false; const ro=!!S.preview;
+  const kb=(S.preview?(S.kb||[]):(S.my.kb||[]));
+  $('#m-kt-list').innerHTML=ctx.partners.map(p=>{ const ks=kontrakOf(p); const req=kb.filter(x=>x.partner_id===p.id&&x.status!=='disetujui');
+    return `<div class="kt-row"><div class="who"><strong>PLTU ${esc(p.plant)}</strong><br><span class="hint">${esc(p.name)}</span></div><div class="kt-chips">${ks.map(k=>`<span class="kt-chip">${esc(k)}</span>`).join('')||'<span class="hint">Belum ada nomor kontrak tercatat</span>'}${req.map(x=>`<span class="kt-chip ${x.status==='menunggu'?'wait':'no'}" title="${esc(x.status==='menunggu'?'Menunggu persetujuan':'Ditolak'+(x.alasan?': '+x.alasan:''))}">${esc(x.nomor)} · ${x.status==='menunggu'?'menunggu':'ditolak'}</span>`).join('')}</div></div>`; }).join('');
+  $('#m-kt-form').hidden=ro; if(ro) return;
+  const sel=$('#kt-partner'); const cur=sel.value; sel.innerHTML=ctx.partners.map(p=>`<option value="${p.id}">${esc(p.plant)} · ${esc(p.name)}</option>`).join(''); if(cur) sel.value=cur;
+  $('#m-kt-form').onsubmit=async ev=>{ ev.preventDefault(); const e=$('#kt-err'); e.hidden=true;
+    const pid=+sel.value, p=ctx.partners.find(x=>x.id===pid), nomor=$('#kt-nomor').value.trim().replace(/\s+/g,' '), cat=$('#kt-cat').value.trim();
+    if(!kontrakKeys(nomor).length){ e.textContent='Isi nomor kontrak yang valid, misalnya 0911.PJ.'; e.hidden=false; $('#kt-nomor').focus(); return; }
+    const k0=kontrakKeys(nomor)[0].k; if(kontrakOf(p).some(x=>kontrakKeys(x)[0]?.k===k0)){ e.textContent=`Nomor ${nomor} sudah terdaftar untuk PLTU ${p.plant}.`; e.hidden=false; return; }
+    if(kb.some(x=>x.partner_id===pid&&x.status==='menunggu'&&kontrakKeys(x.nomor)[0]?.k===k0)){ e.textContent='Nomor ini sudah diajukan dan sedang menunggu persetujuan.'; e.hidden=false; return; }
+    const {error}=await S.sb.from('kontrak_baru').upsert({user_id:S.uid,partner_id:pid,nomor,catatan:cat||null,status:'menunggu',alasan:null},{onConflict:'partner_id,nomor'});
+    if(error){ e.textContent=errMsg(error); e.hidden=false; return; }
+    $('#kt-nomor').value=''; $('#kt-cat').value=''; toast('Kontrak baru diajukan ke PLN EPI'); await reload(); };
+}
+function renderKontrakBaru(){
+  const list=(S.kb||[]).filter(x=>x.status==='menunggu'); $('#kb-wrap').hidden=!list.length; if(!list.length) return;
+  $('#tbl-kb').innerHTML=`<thead><tr><th>PLTU · Mitra</th><th>Nomor baru</th><th>Kontrak terdaftar</th><th>Diajukan</th><th></th></tr></thead><tbody>${list.map(x=>{ const p=S.pById.get(x.partner_id); const pr=S.profiles.find(z=>z.id===x.user_id);
+    return `<tr data-id="${x.id}"><td><strong>${esc(p?.name||'-')}</strong><br><span class="hint">PLTU ${esc(p?.plant||'-')}</span></td><td><span class="mono">${esc(x.nomor)}</span>${x.catatan?`<br><span class="hint">${esc(x.catatan)}</span>`:''}</td>
+      <td class="hint mono">${esc(kontrakOf(p).join(', ')||'—')}</td><td class="hint">${esc(pr?.username||pr?.nama||'-')}<br>${dLong(String(x.created_at).slice(0,10))}</td>
+      <td style="white-space:nowrap"><button class="btn sm" data-ok type="button">Setujui</button> <button class="btn danger sm" data-no type="button">Tolak</button></td></tr>`; }).join('')}</tbody>`;
+  $('#tbl-kb').querySelectorAll('tr[data-id]').forEach(tr=>{ const id=+tr.dataset.id;
+    tr.querySelector('[data-ok]').onclick=async ev=>{ ev.currentTarget.disabled=true; const {error}=await S.sb.rpc('setujui_kontrak',{p_id:id}); if(error){ toast(errMsg(error)); ev.currentTarget.disabled=false; return; } toast('Kontrak disetujui'); await reload(); };
+    const no=tr.querySelector('[data-no]'); no.onclick=async()=>{ if(no.dataset.armed!=='1'){ no.dataset.armed='1'; no.textContent='Yakin tolak?'; return; }
+      const {error}=await S.sb.from('kontrak_baru').update({status:'ditolak'}).eq('id',id); if(error){ toast(errMsg(error)); return; } toast('Permintaan ditolak'); await reload(); }; });
+}
 /* ---------- mitra: PIC ---------- */
 function renderPic(){
   const box=$('#m-pic'); const ro=!!S.preview; box.hidden=false;
@@ -1306,13 +1365,14 @@ async function fetchAll(table,select,orders){
 }
 const must=async p=>{ const {data,error}=await p; if(error) throw error; return data; };
 async function loadManager(){
-  const [plants,partners,rows,cat,tl,profiles,akses,req,ann,pics]=await Promise.all([
-    must(S.sb.from('plants').select('*').order('urut')), fetchAll('partners','*',['id']), fetchAll('realisasi','*',['tanggal','partner_id']),
+  const [plants,partners,rows,cat,tl,profiles,akses,req,ann,pics,kb]=await Promise.all([
+    must(S.sb.from('plants').select('*').order('urut')), fetchAll('partners','*',['id']), fetchAll('realisasi','*',['tanggal','partner_id','kontrak']),
     fetchAll('catatan','*',['id']), fetchAll('tindak_lanjut','*',['issue_id']), fetchAll('profiles','*',['created_at','id']),
     fetchAll('akses','*',['user_id','partner_id']), fetchAll('permintaan','*',['created_at','user_id']),
     must(S.sb.from('pengumuman').select('*').order('created_at',{ascending:false}).limit(50)),
-    (async()=>{ const r=await S.sb.from('pic_tambahan').select('*').order('created_at'); return r.data||[]; })()]);
-  Object.assign(S,{plantsRaw:plants,partnersRaw:partners,rows,catatan:cat,profiles,akses,req,ann,pics});
+    (async()=>{ const r=await S.sb.from('pic_tambahan').select('*').order('created_at'); return r.data||[]; })(),
+    (async()=>{ const r=await S.sb.from('kontrak_baru').select('*').order('created_at'); return r.data||[]; })()]);
+  Object.assign(S,{plantsRaw:plants,partnersRaw:partners,rows,catatan:cat,profiles,akses,req,ann,pics,kb});
   S.plantOrder=Object.fromEntries(plants.map((p,i)=>[p.name,i]));
   S.followups=new Map(tl.map(t=>[t.issue_id,t]));
   S.pById=new Map(partners.map(p=>[p.id,p])); S.pByKey=new Map(partners.map(p=>[p.plant+'|'+p.name,p]));
@@ -1320,12 +1380,13 @@ async function loadManager(){
   S.sync={ready:!st.error&&!lg.error, url:st.data?.nilai||'', log:lg.data||[]};
 }
 async function loadMitra(){
-  const [partners,rows,prog,umpan,ann,req,kat,pics]=await Promise.all([
-    fetchAll('partners','*',['id']), fetchAll('realisasi','*',['tanggal','partner_id']), must(S.sb.rpc('progres_pltu')), must(S.sb.rpc('umpan_saya')),
+  const [partners,rows,prog,umpan,ann,req,kat,pics,kb]=await Promise.all([
+    fetchAll('partners','*',['id']), fetchAll('realisasi','*',['tanggal','partner_id','kontrak']), must(S.sb.rpc('progres_pltu')), must(S.sb.rpc('umpan_saya')),
     must(S.sb.from('pengumuman').select('*').order('created_at',{ascending:false}).limit(20)),
     must(S.sb.from('permintaan').select('*').eq('user_id',S.uid).maybeSingle()), (async()=>{ const a=await S.sb.rpc('katalog_lengkap'); if(!a.error&&a.data) return a.data; return must(S.sb.rpc('katalog')); })(),
-    (async()=>{ const r=await S.sb.from('pic_tambahan').select('*').order('created_at'); return r.data||[]; })()]);
-  S.my.pics=pics;
+    (async()=>{ const r=await S.sb.from('pic_tambahan').select('*').order('created_at'); return r.data||[]; })(),
+    (async()=>{ const r=await S.sb.from('kontrak_baru').select('*').order('created_at'); return r.data||[]; })()]);
+  S.my.pics=pics; S.my.kb=kb;
   S.my.partners=S.role==='mitra'?partners:[]; S.my.rows=rows; S.my.umpan=umpan; S.my.req=req; S.katalog=kat; S.ann=ann;
   S.my.pct=Object.fromEntries((prog||[]).filter(x=>x.pct!=null).map(x=>[x.plant,+x.pct]));
   S.plantOrder=Object.fromEntries([...new Set(kat.map(k=>k.plant))].map((p,i)=>[p,i]));

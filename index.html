@@ -353,6 +353,12 @@ kbd{font:inherit;font-size:11px;padding:0 4px;border:1px solid var(--line);borde
 #tbl-ns thead th{position:sticky;top:0;background:var(--surface);z-index:1}
 #tbl-ns .wa{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--good-ink);text-decoration:none;border:1px solid var(--line);border-radius:6px;padding:3px 8px;white-space:nowrap}
 .ym-head .row select{width:auto}
+.kt-list{display:grid;gap:8px;margin-bottom:16px}
+.kt-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.kt-row .who{min-width:180px}
+.kt-chips{display:flex;gap:6px;flex-wrap:wrap}
+.kt-chip{font-family:var(--mono,monospace);font-size:12px;padding:2px 8px;border-radius:5px;background:var(--good-bg);color:var(--good-ink)}
+.kt-chip.wait{background:var(--warn-bg);color:var(--warn-ink)} .kt-chip.no{background:var(--crit-bg);color:var(--crit-ink);text-decoration:line-through}
 .flabel{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
 .pick-list{display:flex;flex-wrap:wrap;gap:8px}
 .pick{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:13px;cursor:pointer;background:var(--surface)}
@@ -472,6 +478,20 @@ tr.mng-row>td{background:var(--surface-2,transparent)}
     <div class="panel">
       <div class="panel-head"><h2>Realisasi bulanan Anda</h2><p>MT</p></div>
       <div class="chart" id="m-month"></div>
+    </div>
+    <div class="panel" id="m-kontrak" hidden>
+      <div class="panel-head"><h2>Kontrak saya</h2><p>Nomor kontrak yang bisa dipilih saat melapor. Punya kontrak baru di PLTU yang sama? Ajukan di sini.</p></div>
+      <div class="kt-list" id="m-kt-list"></div>
+      <form id="m-kt-form" class="entry" novalidate>
+        <span class="flabel">Ajukan kontrak baru</span>
+        <div class="fields">
+          <div class="field"><label for="kt-partner">PLTU</label><select id="kt-partner"></select></div>
+          <div class="field"><label for="kt-nomor">Nomor kontrak baru</label><input id="kt-nomor" maxlength="80" autocomplete="off" placeholder="contoh: 0911.PJ"></div>
+          <div class="field full"><label for="kt-cat">Keterangan <span class="hint">(opsional)</span></label><input id="kt-cat" maxlength="300" placeholder="contoh: Kontrak tambahan volume Desember 2026"></div>
+        </div>
+        <div class="err" id="kt-err" hidden></div>
+        <div class="row"><button class="btn ghost" type="submit">Ajukan ke PLN EPI</button><span class="hint">Setelah disetujui manager, nomor ini bisa dipilih di Lapor Harian dan volumenya dicatat terpisah.</span></div>
+      </form>
     </div>
     <div class="panel" id="m-pic" hidden>
       <div class="panel-head"><h2>PIC pelapor</h2><p>Kontak yang dihubungi PLN EPI untuk akun ini</p></div>
@@ -605,6 +625,7 @@ tr.mng-row>td{background:var(--surface-2,transparent)}
           <div class="field"><label for="f-plant">PLTU tujuan</label><select id="f-plant" required></select></div>
           <div class="field"><label for="f-partner">Nama mitra</label><select id="f-partner" required></select></div>
           <div class="field full" id="wrap-new" hidden><label for="f-partner-new">Nama mitra baru</label><input id="f-partner-new" maxlength="60" placeholder="contoh: PT ABC"></div>
+          <div class="field" id="wrap-kontrak" hidden><label for="f-kontrak">Nomor kontrak</label><select id="f-kontrak"></select><span class="hint" id="kontrak-hint"></span></div>
         </div>
         <div class="seg" role="tablist" aria-label="Cara input">
           <button type="button" role="tab" id="mode-bulk" aria-controls="bulk" aria-selected="true">Tabel bulanan</button>
@@ -685,6 +706,7 @@ tr.mng-row>td{background:var(--surface-2,transparent)}
     <div class="panel">
       <div class="panel-head"><h2>Permintaan akses</h2><p id="req-count"></p></div>
       <div class="tbl-wrap"><table id="tbl-req"></table></div>
+      <div id="kb-wrap" hidden style="margin-top:16px"><h3 style="margin:0 0 4px;font-size:15px">Permintaan kontrak baru</h3><p class="hint" style="margin:0 0 8px">Mitra eksisting mengajukan nomor kontrak tambahan di PLTU yang sama. Setelah disetujui, mitra bisa memilih kontrak ini saat melapor dan volumenya dicatat terpisah.</p><div class="tbl-wrap"><table id="tbl-kb"></table></div></div>
       <div id="orphan-wrap" hidden style="margin-top:16px"><h3 style="margin:0 0 4px;font-size:15px">Akun belum melengkapi pendaftaran</h3><p class="hint" style="margin:0 0 8px">Sudah membuat akun tetapi belum mengirim nama perusahaan &amp; PLTU. Minta mitra masuk lagi untuk melengkapi, atau hapus akunnya agar nama pengguna bisa dipakai ulang.</p><div class="tbl-wrap"><table id="tbl-orphan"></table></div></div>
     </div>
     <div class="panel" id="induk-panel">
@@ -735,7 +757,7 @@ tr.mng-row>td{background:var(--surface-2,transparent)}
 
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=202611241144"></script>
-<script src="app.js?v=202611241144"></script>
+<script src="config.js?v=202611260953"></script>
+<script src="app.js?v=202611260953"></script>
 </body>
 </html>
